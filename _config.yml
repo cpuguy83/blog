@@ -1,11 +1,8 @@
-# Dependencies
 markdown:         redcarpet
 hilighter:        true
 
-# Permalinks
 permalink:        pretty
 
-# Setup
 title:            Tech'd
 tagline:          Stuff I find interesting
 url:              http://www.tech-d.net
