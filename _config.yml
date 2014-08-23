@@ -25,3 +25,5 @@ disqus:
 
 google:
   analytics_id: UA-15812340-1
+
+exclude: [Dockerfile]
