@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+
+  <head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Libswarm (in a nutshell) &middot; Tech'd
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/poole.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="/public/css/lanyon.css">
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=PT+Serif:400,400italic,700|PT+Sans:400">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+  <!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-15812340-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+</head>
+
+
+  <body>
+
+    <!-- Wrap is the content to shift when toggling the sidebar. We wrap the
+         content to avoid any CSS collisions with our real content. -->
+    <div class="wrap">
+      <div class="masthead">
+        <div class="container">
+          <h3 class="masthead-title">
+            <a href="/" title="Home">Tech'd</a>
+            <small>Stuff I find interesting</small>
+          </h3>
+        </div>
+      </div>
+
+      <div class="container content">
+        <div class="post">
+  <h1 class="post-title">Libswarm (in a nutshell)</h1>
+  <span class="post-date">03 Jul 2014</span>
+  <p>At Dockercon, Docker announced a new project being worked on called <code>libswarm</code>.</p>
+
+<p>I wanted to clarify what exactly libswarm is, what it does, and what it doesn&#39;t do.</p>
+
+<!--break-->
+
+<p>First, libswarm is not itself an orchestration tool.</p>
+
+<p>It does not and will not replace any orchestration tools.</p>
+
+<p>Libswarm is a library first and foremost and not an end-user tool.</p>
+
+<p>It is a library that helps make it relatively trivial to compose other disparate tools together, including but not limited to orchestration tools.</p>
+
+<p>I see various pieces of Docker core being broken into smaller libswarm services that come together to make Docker.</p>
+
+<p>I see tools that hook into this libswarm API to extend native Docker functionality.  No more bind-mounting Docker sockets into containers (which, btw, is super dangerous).</p>
+
+<p>Libswarm is the API you will talk to in order to interact with Docker, and not the traditional REST API (though this will probably be available in one form or another)</p>
+
+<p>As part of libswarm is a reference implementation of it called <code>swarmd</code>.</p>
+
+<p><code>swarmd</code> is a proof of concept binary you run to chain services together, much like unix pipes.</p>
+
+<blockquote>
+<p><em>* <code>swarmd</code>&#39;s syntax is incomplete and will probably change</em></p>
+</blockquote>
+
+<p>Within the libswarm project (<a href="https://www.github.com/docker/libswarm">https://www.github.com/docker/libswarm</a>), you will see a dir called &quot;backends&quot; (which I will from here on refer to as &quot;services&quot;).  These are the pieces which talk to the libswarm API and interact with some external service, such as AWS, Rackspace, Orchard, Shipyard, or even some other binary (via the &quot;exec&quot; service), or intercept the libswarm message itself to manipulate it in some way.</p>
+
+<p>The most basic <code>swarmd</code> setup would be this:</p>
+
+<p><code>./swarmd &#39;dockerserver unix:///var/run/docker.sock&#39; &#39;dockerclient tcp://1.2.3.4:2375&#39;</code></p>
+
+<p>This will spin up the <code>dockerserver</code> service, which is an implementation of the Docker REST API.  <code>dockerserver</code> takes HTTP requests and makes libswarm messages out of them.</p>
+
+<p><code>dockerclient</code> receives libswarm messages and forwards them to a docker daemon (currently the normal REST API).</p>
+
+<p>This doesn&#39;t really do much, but with it you can run a docker client locally talking to a unix socket at <code>/var/run/docker.sock</code> and have those requests forwarded to a docker daemon at 1.2.3.4:2375.</p>
+
+<p><img src="/assets/548d351e8542debc543ca059d96859c9.png" alt="548d351e8542debc543ca059d96859c9"></p>
+
+<p>You can also do something like this:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">./swarmd <span class="s1">&#39;dockerserver unix:///var/run/docker.sock&#39;</span> <span class="s1">&#39;aggregate &quot;dockerclient tcp://1.2.3.4:2375&quot; &quot;dockerclient tcp://1.2.3.5:2375&quot; &quot;dockerclient tcp://1.2.3.6:2376&quot;&#39;</span>
+</code></pre></div>
+<p>This does much like the first example, except it uses the <code>aggregate</code> service to talk to each of the listed <code>dockerclient</code> services and aggregate the results.  You could use <code>docker run</code> here and <code>aggregate</code> will pick one of the <code>dockerclient</code> services to create the new container on.</p>
+
+<p>You can <code>docker ps</code> and get a list of all the running containers on all of the listed <code>dockerclient</code> services, in one list.</p>
+
+<p>This is also only generally useful as a demo at this time.</p>
+
+<p>But imagine this:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">./swarmd <span class="s1">&#39;dockerserver unix:///var/run/docker.sock&#39;</span> <span class="s1">&#39;mesos &quot;dockerclient tcp://1.2.3.4:2375&quot; &quot;dockerclient tcp://1.2.3.5:2375&quot; &quot;dockerclient tcp://1.2.3.6:2376&quot;&#39;</span>
+</code></pre></div>
+<p>Now I should note, there is currently no mesos backend (please contribute if you can!), but what would happen here is we could use &quot;docker run&quot; to pipe into Mesos which determines the <code>dockerclient</code> to run on based on availability, or whatever Mesos-ish criteria.</p>
+
+<p>You could swap this out for Kubernetes, or whatever scheduler.</p>
+
+<p>You can put as many services into this chain as you want.</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">./swarmd <span class="s1">&#39;dockerserver unix://var/run/docker.sock&#39;</span> <span class="s1">&#39;serviceA&#39;</span> <span class="s1">&#39;serviceB&#39;</span> <span class="s1">&#39;serviceC&#39;</span> <span class="s1">&#39;dockerclient tcp://1.2.3.5:2375&#39;</span>
+</code></pre></div>
+<p>Any of these services can intercept the request, manipulate it on some rule, and forward it on down the chain... or call some external service do some stuff, forward it on down the chain... it really doesn&#39;t matter.</p>
+
+<p>As long as the service being called implements the libswarm API and properly sends/receives the libswarm messages it will fit into the chain.</p>
+
+<p>In each of these examples I used <code>dockerserver</code> on the front and <code>dockerclient</code> on the back.  This is for convenience and the fact that these are working services.</p>
+
+<p>It technically doesn&#39;t even have to be Docker here.  Libswarm is completely independent of Docker.</p>
+
+<p>I should also mention, libswarm uses <a href="https://www.github.com/docker/libchan">libchan</a> for communication.</p>
+
+<p>Libswarm is also still rough around the edges until the API gets nailed down fully.</p>
+
+<hr>
+
+<p>TL;DR</p>
+
+<p>libswarm is about providing a common API for composing otherwise completely separate tools/services.</p>
+
+<p>swarmd lets you chain these libswarm services into something sort of like unix pipes.... I prefer the referring to it as a middleware chain.</p>
+
+<p>For more info on libswarm, take a look at the <a href="https://www.github.com/docker/libswarm">git repo,</a> and join us in #libswarm on freenode.</p>
+
+<p>Thanks @markwrenn for the illustration</p>
+
+</div>
+
+<div class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+      <li>
+        <h3>
+          <a href="/2014/07/31/dockerhub-in-dev-test-workflow/">
+            DockerHub in dev-test Workflow
+            <small>31 Jul 2014</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="/2014/07/17/libswarm-demotime-logging/">
+            libswarm demotime - logging
+            <small>17 Jul 2014</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="/2014/05/05/docker-quicktip-5-backing-up-volumes/">
+            Docker Quicktip #5: Backing up Volumes
+            <small>05 May 2014</small>
+          </a>
+        </h3>
+      </li>
+    
+  </ul>
+</div>
+
+
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'tech-d'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+      </div>
+    </div>
+
+  </body>
+</html>

@@ -1,0 +1,30 @@
+# Dependencies
+markdown:         redcarpet
+hilighter:        true
+
+# Permalinks
+permalink:        pretty
+
+# Setup
+title:            Tech'd
+tagline:          Stuff I find interesting
+url:              http://www.tech-d.net
+paginate:         5
+baseurl:          /
+author:
+  name:           Brian Goff
+  url:            https://twitter.com/cpuguy83
+  email:          cpuguy83@gmail.com
+
+version: 1
+
+github:
+  repo: //github.com/cpuguy83/blog
+
+comments: true
+
+disqus:
+  short_name: tech-d
+
+google:
+  analytics_id: UA-15812340-1

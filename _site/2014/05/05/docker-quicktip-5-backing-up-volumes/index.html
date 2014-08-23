@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+
+  <head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Docker Quicktip #5: Backing up Volumes &middot; Tech'd
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/poole.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="/public/css/lanyon.css">
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=PT+Serif:400,400italic,700|PT+Sans:400">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+  <!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-15812340-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+</head>
+
+
+  <body>
+
+    <!-- Wrap is the content to shift when toggling the sidebar. We wrap the
+         content to avoid any CSS collisions with our real content. -->
+    <div class="wrap">
+      <div class="masthead">
+        <div class="container">
+          <h3 class="masthead-title">
+            <a href="/" title="Home">Tech'd</a>
+            <small>Stuff I find interesting</small>
+          </h3>
+        </div>
+      </div>
+
+      <div class="container content">
+        <div class="post">
+  <h1 class="post-title">Docker Quicktip #5: Backing up Volumes</h1>
+  <span class="post-date">05 May 2014</span>
+  <p>Data in Docker volumes is generally super important.  In fact if you are doing your containers correctly the stuff in the volumes is the only thing you need to worry about backing up as containers shouldn&#39;t be storing anything at all.</p>
+
+<p>So how do you access the data in volumes?</p>
+
+<!--break-->
+
+<p>One way is to use <code>docker inspect</code> so see where a container&#39;s volumes are stored and use sudo to access that data.  This isn&#39;t exactly ideal for a number of reasons:</p>
+
+<ul>
+<li><p>Insane paths</p></li>
+<li><p>Accessing data as root user</p></li>
+<li><p>Creating new data needs to be chowned/chmod&#39;d properly so the container can read/write to it as well</p></li>
+</ul>
+
+<p>The preferred way is to use <code>--volumes-from</code>.  When accessing the volume data you want to make sure you are using the same uid/gid as it was written in, so it&#39;s a good idea to use the same image which was used to create that data.  With this method all your data is in the same exact locations as it would normally be.  No need to SSH, nsenter, or nsinit into the container to get at this stuff (<a href="http://jpetazzo.github.io/2014/03/23/lxc-attach-nsinit-nsenter-docker-0-9/">Attaching to a container with Docker 0.9 and libcontainer</a>)...</p>
+
+<p><code>docker run -it --rm --entrypoint /bin/sh --volumes-from  my/appimage -c &quot;bash&quot;</code></p>
+
+<p>Recently I was building out the backup scheme for our soon to be in-production Docker-based server.  I wanted to be able to just blindly backup all specified volumes without needing to explicitly write out which volumes I wanted, since this could change over time.  We already know the data is important since it&#39;s in a volume, so just give it to me.</p>
+
+<p>For now I just want to pull in all volumes from all containers and do with them as I please.</p>
+
+<p>Docker doesn&#39;t currently do this with any sort of short-cut like --volumes-from since the volumes needed to be namespaced for container they are in (so as not to overwrite files from other containers).</p>
+
+<p>I started to think about how to implement this feature in Docker, but I really need this now and not month or two from now (when it could possibly be merged in and released).</p>
+
+<p>Technically <code>--volumes-from</code> is just bind-mounting the host path of the given volumes into a new container, you could do this manually with &quot;-v /var/lib/docker/path/to/volume:/container/path&quot;</p>
+
+<p>So I thought, well I&#39;ll just use <code>docker inspect</code> on everything, pipe the output to <a href="http://stedolan.github.io/jq/">jq</a> and parse the info I needed... thankfully this was a huge pain to do (jq didn&#39;t like the dir tree as a hash key).</p>
+
+<p>After fiddling with jq for a bit I remembered that <code>docker inspect</code> takes a &quot;--format&quot; option, which is a <a href="http://golangtutorials.blogspot.com/2011/06/go-templates.html">go-template</a> format.  With this I can massage the output of `docker inspect to be whatever I want it to be, and so here is a little bash function I created to help me do this:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">volume_ars<span class="o">()</span> <span class="o">{</span>
+  docker inspect --format<span class="o">=</span><span class="s1">&#39;-v :/volData &#39;</span> <span class="nv">$1</span>
+<span class="o">}}</span>
+</code></pre></div>
+<p>This little snippet takes a container ID/name as input and spits out all of it&#39;s volumes as bind-mount style arguments to be inserted into a <code>docker run</code> command, for instance a container with a volume at &quot;/example&quot; would output &quot;-v /volume/path/on/host:/volData//example&quot;.</p>
+
+<p>If a container has more than one volume it builds multiple &quot;-v&quot; arguments just as you might if you did it manually.  This output can be directly inserted into a <code>docker run</code> command.</p>
+
+<p>And to get all volumes, without getting duplicate host paths (because many of my containers will use the same volumes with <code>--volumes-from</code></p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">volumes_args<span class="o">()</span> <span class="o">{</span>
+  docker inspect --format<span class="o">=</span><span class="s1">&#39;-v :/volData &#39;</span> <span class="k">${</span><span class="nv">1</span><span class="k">}</span>
+<span class="o">}</span>
+volume_hostPaths<span class="o">()</span> <span class="o">{</span>
+  docker inspect --format<span class="o">=</span><span class="s1">&#39;  &#39;</span> <span class="k">${</span><span class="nv">1</span><span class="k">}</span>
+<span class="o">}</span>
+
+<span class="nv">volConfig</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+<span class="nv">paths</span><span class="o">=()</span> <span class="c"># store host paths so we can check if it&#39;s already used</span>
+<span class="k">for</span> container in <span class="k">$(</span>docker ps -a -q<span class="k">)</span><span class="p">;</span> <span class="k">do</span>
+  <span class="nv">hostPaths</span><span class="o">=</span><span class="k">$(</span>volume_hostPaths <span class="k">${</span><span class="nv">container</span><span class="k">})</span>
+  <span class="k">for</span> hostPath in <span class="nv">$hostPaths</span><span class="p">;</span> <span class="k">do</span>
+    <span class="nv">match</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="s2">&quot;${paths[@]:0}&quot;</span> <span class="p">|</span> grep -o <span class="k">${</span><span class="nv">hostPath</span><span class="k">})</span>
+    <span class="k">if</span> <span class="o">[[</span> <span class="s2">&quot;${match}&quot;</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+      paths+<span class="o">=(</span><span class="k">${</span><span class="nv">hostPath</span><span class="k">}</span><span class="o">)</span>
+      <span class="nv">volConfig</span><span class="o">=</span><span class="s2">&quot;${volConfig} $(volumes_args ${container})&quot;</span>
+    <span class="k">fi</span>
+  <span class="k">done</span>
+<span class="k">done</span>
+
+docker run -d <span class="k">${</span><span class="nv">volConfig</span><span class="k">}</span> --name mybackcontainer my/backup-image
+</code></pre></div>
+</div>
+
+<div class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+      <li>
+        <h3>
+          <a href="/2014/07/31/dockerhub-in-dev-test-workflow/">
+            DockerHub in dev-test Workflow
+            <small>31 Jul 2014</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="/2014/07/17/libswarm-demotime-logging/">
+            libswarm demotime - logging
+            <small>17 Jul 2014</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="/2014/07/03/libswarm/">
+            Libswarm (in a nutshell)
+            <small>03 Jul 2014</small>
+          </a>
+        </h3>
+      </li>
+    
+  </ul>
+</div>
+
+
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'tech-d'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+      </div>
+    </div>
+
+  </body>
+</html>

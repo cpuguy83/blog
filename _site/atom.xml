@@ -1,0 +1,946 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+ <title>Tech'd</title>
+ <link href="http://www.tech-d.net/atom.xml" rel="self"/>
+ <link href="http://www.tech-d.net/"/>
+ <updated>2014-08-23T03:12:06+00:00</updated>
+ <id>http://www.tech-d.net</id>
+ <author>
+   <name>Brian Goff</name>
+   <email>cpuguy83@gmail.com</email>
+ </author>
+
+ 
+ <entry>
+   <title>DockerHub in dev-test Workflow</title>
+   <link href="http://www.tech-d.net/2014/07/31/dockerhub-in-dev-test-workflow/"/>
+   <updated>2014-07-31T21:24:19+00:00</updated>
+   <id>http://www.tech-d.net/2014/07/31/dockerhub-in-dev-test-workflow</id>
+   <content type="html">&lt;p&gt;When DockerHub was announced there was a really handy feature added that you may have missed: Webhooks.&lt;/p&gt;
+
+&lt;p&gt;With DockerHub you can setup a webhook to call out to an external service once a successful push of a particular image is made (this includes completion of automated builds).&lt;/p&gt;
+
+&lt;p&gt;This makes for a nice addition to an existing CI/CD workflow.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;The basic idea is this:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt; Setup DockerHub automated build&lt;/li&gt;
+&lt;li&gt; Push code changes to github&lt;/li&gt;
+&lt;li&gt; DockerHub sees changes and pulls/builds the image&lt;/li&gt;
+&lt;li&gt; DockerHub calls webhooks for image&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;The payload DockerHub sends to webhook services is a POST request with some JSON about the image&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+   &lt;span class=&quot;nt&quot;&gt;&amp;quot;push_data&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:{&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;pushed_at&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1385141110&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;images&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:[&lt;/span&gt;
+         &lt;span class=&quot;s2&quot;&gt;&amp;quot;imagehash1&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+         &lt;span class=&quot;s2&quot;&gt;&amp;quot;imagehash2&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+         &lt;span class=&quot;s2&quot;&gt;&amp;quot;imagehash3&amp;quot;&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;pusher&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;username&amp;quot;&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+   &lt;span class=&quot;nt&quot;&gt;&amp;quot;repository&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:{&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;status&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;Active&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;description&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;my docker repo that does cool things&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;is_trusted&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;full_description&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;This is my full description&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;repo_url&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;https://registry.hub.docker.com/u/username/reponame/&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;owner&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;username&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;is_official&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;is_private&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;name&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;reponame&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;namespace&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;username&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;star_count&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;comment_count&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;date_created&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1370174400&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;dockerfile&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;my full dockerfile is listed here&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;repo_name&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;username/reponame&amp;quot;&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This can already be integrated with Jenkins using the &amp;quot;&lt;a href=&quot;https://github.com/jenkinsci/dockerhub-plugin&quot;&gt;DockerHub&lt;/a&gt;&amp;quot; plugin.&lt;/p&gt;
+
+&lt;p&gt;I have a demo Rails app here: &lt;a href=&quot;https://github.com/cpuguy83/docker-rails-dev-demo&quot;&gt;https://github.com/cpuguy83/docker-rails-dev-demo&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;This is setup as an automated build with DockerHub: &lt;a href=&quot;https://registry.hub.docker.com/u/cpuguy83/docker-rails-dev-demo/&quot;&gt;https://registry.hub.docker.com/u/cpuguy83/docker-rails-dev-demo/&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;&lt;em&gt;It doesn&amp;#39;t need to be an automated build for webhooks to work, but with an automated build I can push to GitHub and trigger the build to happen&lt;/em&gt;&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;In Jenkins I&amp;#39;m going to setup the trigger to do something on a successful build from DockerHub:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.tech-d.net/wp-content/uploads/2014/07/Screen-Shot-2014-07-31-at-3.57.59-PM.png&quot;&gt;&lt;img src=&quot;/assets/Screen-Shot-2014-07-31-at-3.57.59-PM.png&quot; alt=&quot;Screen Shot 2014-07-31 at 3.57.59 PM&quot;&gt;&lt;/a&gt;]&lt;/p&gt;
+
+&lt;p&gt;Then tell it to pull down my new image and run my tests by invoking &lt;code&gt;docker run cpuguy83/docker-rails-dev-demo test&lt;/code&gt;:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.tech-d.net/wp-content/uploads/2014/07/Screen-Shot-2014-07-31-at-4.00.33-PM.png&quot;&gt;&lt;img src=&quot;/assets/Screen-Shot-2014-07-31-at-4.00.33-PM.png&quot; alt=&quot;Screen Shot 2014-07-31 at 4.00.33 PM&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;*&lt;sub&gt;&lt;em&gt;You&amp;#39;ll notice in my github repo the Dockerfile is using bin/start.rb to start this container, which itself maps the &lt;code&gt;test&lt;/code&gt; argument to &lt;code&gt;rake test&lt;/code&gt;&lt;/em&gt;&lt;/sub&gt;&lt;/p&gt;
+
+&lt;p&gt;On DockerHub we need to setup the webhook. You can find the webhooks link on the main repo page, on the right-hand column under &amp;quot;Settings&amp;quot;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.tech-d.net/wp-content/uploads/2014/07/Screen-Shot-2014-07-31-at-4.20.18-PM.png&quot;&gt;&lt;img src=&quot;/assets/Screen-Shot-2014-07-31-at-4.20.18-PM.png&quot; alt=&quot;Screen Shot 2014-07-31 at 4.20.18 PM&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Add the hook for our Jenkins instance:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.tech-d.net/wp-content/uploads/2014/07/Screen-Shot-2014-07-31-at-4.02.25-PM.png&quot;&gt;&lt;img src=&quot;/assets/Screen-Shot-2014-07-31-at-4.02.25-PM.png&quot; alt=&quot;Screen Shot 2014-07-31 at 4.02.25 PM&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;sub&gt;&lt;em&gt;Change &lt;code&gt;JENKINS&lt;/code&gt; to your Jenkins host.  The path &lt;code&gt;/dockerhub-webhook/&lt;/code&gt; must stay as per the Jenkins plugin.&lt;/em&gt;&lt;/sub&gt;&lt;/p&gt;
+
+&lt;p&gt;Away we go, full CI workflow with tests running in the actual real image, tied in with DockerHub as an automated build.&lt;/p&gt;
+
+&lt;p&gt;What&amp;#39;s really aweomse is this works with your private repos as well!&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>libswarm demotime - logging</title>
+   <link href="http://www.tech-d.net/2014/07/17/libswarm-demotime-logging/"/>
+   <updated>2014-07-17T20:09:12+00:00</updated>
+   <id>http://www.tech-d.net/2014/07/17/libswarm-demotime-logging</id>
+   <content type="html">&lt;p&gt;If you don&amp;#39;t know what libswarm is take a gander at &lt;a href=&quot;http://www.tech-d.net/2014/07/03/libswarm/&quot; title=&quot;Libswarm (in a nutshell)&quot;&gt;Libswarm in a nutshell&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Just a quick demo showing off what libswarm can do with logging.&lt;/p&gt;
+
+&lt;p&gt;I will be using code from this gist: &lt;a href=&quot;https://gist.github.com/cpuguy83/b7c0f42e903bc13c46d6&quot;&gt;https://gist.github.com/cpuguy83/b7c0f42e903bc13c46d6&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Demo time!&lt;/p&gt;
+
+&lt;!--break--&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# start a container that prints to stdout&lt;/span&gt;
+docker -H tcp://10.0.0.2:2375 run -d --entrypoint /bin/sh debian:jessie -c &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    &lt;span class=&quot;s1&quot;&gt;&amp;#39;while true; do echo this is a log message; sleep 1; done&amp;#39;&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# fire up swarmd&lt;/span&gt;
+./swarmd &lt;span class=&quot;s1&quot;&gt;&amp;#39;logforwarder tcp://10.0.0.2:2375&amp;#39;&lt;/span&gt; stdoutlogger
+Getting logs tcp://10.0.0.2:2375 &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;agitated_yonath&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;
+2014-07-17 19:04:22.42915222 +0000 UTC  tcp://10.0.0.2:2375 agitated_yonath INFO    this is a log message
+
+2014-07-17 19:04:23.43114032 +0000 UTC  tcp://10.0.0.2:2375 agitated_yonath INFO    this is a log message
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&lt;a href=&quot;http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-1daemon.png&quot;&gt;&lt;img src=&quot;/assets/libswarm-logforwarder-1daemon.png&quot; alt=&quot;libswarm-logforwarder-1daemon&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;So we told swarmd to fire up the logforwarder backend and connect to the docker daemon on tcp://10.0.0.2:2375, attach to each of the containers in the daemon, convert the stdout/stderr streams to log messages and forward them into the stdoutlogger (which is a backend made simply for demo purposes) which prints to the terminal&amp;#39;s stdout.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# Now lets connect to multiple daemons with multiple containers
+docker -H tcp://10.0.0.2:2375 run -d --entrypoint /bin/sh debian:jessie -c \
+    &amp;#39;while true; do echo this is a log message; sleep 1; done&amp;#39;
+docker -H tcp://10.0.0.2:2375 run -d --entrypoint /bin/sh debian:jessie -c \
+    &amp;#39;while true; do echo this is a log message; sleep 1; done&amp;#39;
+
+docker -H tcp://10.0.0.3:2375 run -d --entrypoint /bin/sh debian:jessie -c \
+    &amp;#39;while true; do echo this is also a log message; sleep 1; done&amp;#39;
+
+./swarmd &amp;#39;logforwarder tcp://10.0.0.2:2375 tcp://10.0.0.3:2375&amp;#39; stdoutlogger
+Getting logs tcp://10.0.0.2:2375 [agitated_yonath romantic_wozniak]
+Getting logs tcp://10.0.0.3:2375 [hopeful_babbage]
+2014-07-17 19:40:22.93898444 +0000 UTC  tcp://10.0.0.2:2375 agitated_yonath INFO    this is a log message
+
+2014-07-17 19:40:23.26841138 +0000 UTC  tcp://10.0.0.3:2375 hopeful_babbage INFO    this is also a log message
+
+2014-07-17 19:40:23.63765218 +0000 UTC  tcp://10.0.0.2:2375 romantic_wozniak    INFO    this too is a log message
+
+2014-07-17 19:40:23.94244022 +0000 UTC  tcp://10.0.0.2:2375 agitated_yonath INFO    this is a log message
+
+2014-07-17 19:40:24.27086067 +0000 UTC  tcp://10.0.0.3:2375 hopeful_babbage INFO    this is also a log message
+
+2014-07-17 19:40:24.64303259 +0000 UTC  tcp://10.0.0.2:2375 romantic_wozniak    INFO    this too is a log message
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Here we have the logforwarder connecting to 2 docker backends, attaching to each of the containers and forwarding the stdout/stderr streams to the &lt;code&gt;stdoutlogger&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-2daemons.png&quot;&gt;&lt;img src=&quot;/assets/libswarm-logforwarder-2daemons.png&quot; alt=&quot;libswarm-logforwarder-2daemons&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Instead of &lt;code&gt;stdoutlogger&lt;/code&gt;, this could be swapped out for syslog, logstash, whatever... it just needs to implement the libswarm &lt;code&gt;Log&lt;/code&gt; verb.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-syslog.png&quot;&gt;&lt;img src=&quot;/assets/libswarm-logforwarder-syslog.png&quot; alt=&quot;libswarm-logforwarder-syslog&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Libswarm (in a nutshell)</title>
+   <link href="http://www.tech-d.net/2014/07/03/libswarm/"/>
+   <updated>2014-07-03T14:05:47+00:00</updated>
+   <id>http://www.tech-d.net/2014/07/03/libswarm</id>
+   <content type="html">&lt;p&gt;At Dockercon, Docker announced a new project being worked on called &lt;code&gt;libswarm&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;I wanted to clarify what exactly libswarm is, what it does, and what it doesn&amp;#39;t do.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;First, libswarm is not itself an orchestration tool.&lt;/p&gt;
+
+&lt;p&gt;It does not and will not replace any orchestration tools.&lt;/p&gt;
+
+&lt;p&gt;Libswarm is a library first and foremost and not an end-user tool.&lt;/p&gt;
+
+&lt;p&gt;It is a library that helps make it relatively trivial to compose other disparate tools together, including but not limited to orchestration tools.&lt;/p&gt;
+
+&lt;p&gt;I see various pieces of Docker core being broken into smaller libswarm services that come together to make Docker.&lt;/p&gt;
+
+&lt;p&gt;I see tools that hook into this libswarm API to extend native Docker functionality.  No more bind-mounting Docker sockets into containers (which, btw, is super dangerous).&lt;/p&gt;
+
+&lt;p&gt;Libswarm is the API you will talk to in order to interact with Docker, and not the traditional REST API (though this will probably be available in one form or another)&lt;/p&gt;
+
+&lt;p&gt;As part of libswarm is a reference implementation of it called &lt;code&gt;swarmd&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;swarmd&lt;/code&gt; is a proof of concept binary you run to chain services together, much like unix pipes.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;* &lt;code&gt;swarmd&lt;/code&gt;&amp;#39;s syntax is incomplete and will probably change&lt;/em&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Within the libswarm project (&lt;a href=&quot;https://www.github.com/docker/libswarm&quot;&gt;https://www.github.com/docker/libswarm&lt;/a&gt;), you will see a dir called &amp;quot;backends&amp;quot; (which I will from here on refer to as &amp;quot;services&amp;quot;).  These are the pieces which talk to the libswarm API and interact with some external service, such as AWS, Rackspace, Orchard, Shipyard, or even some other binary (via the &amp;quot;exec&amp;quot; service), or intercept the libswarm message itself to manipulate it in some way.&lt;/p&gt;
+
+&lt;p&gt;The most basic &lt;code&gt;swarmd&lt;/code&gt; setup would be this:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;./swarmd &amp;#39;dockerserver unix:///var/run/docker.sock&amp;#39; &amp;#39;dockerclient tcp://1.2.3.4:2375&amp;#39;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;This will spin up the &lt;code&gt;dockerserver&lt;/code&gt; service, which is an implementation of the Docker REST API.  &lt;code&gt;dockerserver&lt;/code&gt; takes HTTP requests and makes libswarm messages out of them.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;dockerclient&lt;/code&gt; receives libswarm messages and forwards them to a docker daemon (currently the normal REST API).&lt;/p&gt;
+
+&lt;p&gt;This doesn&amp;#39;t really do much, but with it you can run a docker client locally talking to a unix socket at &lt;code&gt;/var/run/docker.sock&lt;/code&gt; and have those requests forwarded to a docker daemon at 1.2.3.4:2375.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/548d351e8542debc543ca059d96859c9.png&quot; alt=&quot;548d351e8542debc543ca059d96859c9&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;You can also do something like this:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;./swarmd &lt;span class=&quot;s1&quot;&gt;&amp;#39;dockerserver unix:///var/run/docker.sock&amp;#39;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;aggregate &amp;quot;dockerclient tcp://1.2.3.4:2375&amp;quot; &amp;quot;dockerclient tcp://1.2.3.5:2375&amp;quot; &amp;quot;dockerclient tcp://1.2.3.6:2376&amp;quot;&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This does much like the first example, except it uses the &lt;code&gt;aggregate&lt;/code&gt; service to talk to each of the listed &lt;code&gt;dockerclient&lt;/code&gt; services and aggregate the results.  You could use &lt;code&gt;docker run&lt;/code&gt; here and &lt;code&gt;aggregate&lt;/code&gt; will pick one of the &lt;code&gt;dockerclient&lt;/code&gt; services to create the new container on.&lt;/p&gt;
+
+&lt;p&gt;You can &lt;code&gt;docker ps&lt;/code&gt; and get a list of all the running containers on all of the listed &lt;code&gt;dockerclient&lt;/code&gt; services, in one list.&lt;/p&gt;
+
+&lt;p&gt;This is also only generally useful as a demo at this time.&lt;/p&gt;
+
+&lt;p&gt;But imagine this:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;./swarmd &lt;span class=&quot;s1&quot;&gt;&amp;#39;dockerserver unix:///var/run/docker.sock&amp;#39;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;mesos &amp;quot;dockerclient tcp://1.2.3.4:2375&amp;quot; &amp;quot;dockerclient tcp://1.2.3.5:2375&amp;quot; &amp;quot;dockerclient tcp://1.2.3.6:2376&amp;quot;&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now I should note, there is currently no mesos backend (please contribute if you can!), but what would happen here is we could use &amp;quot;docker run&amp;quot; to pipe into Mesos which determines the &lt;code&gt;dockerclient&lt;/code&gt; to run on based on availability, or whatever Mesos-ish criteria.&lt;/p&gt;
+
+&lt;p&gt;You could swap this out for Kubernetes, or whatever scheduler.&lt;/p&gt;
+
+&lt;p&gt;You can put as many services into this chain as you want.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;./swarmd &lt;span class=&quot;s1&quot;&gt;&amp;#39;dockerserver unix://var/run/docker.sock&amp;#39;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;serviceA&amp;#39;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;serviceB&amp;#39;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;serviceC&amp;#39;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;dockerclient tcp://1.2.3.5:2375&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Any of these services can intercept the request, manipulate it on some rule, and forward it on down the chain... or call some external service do some stuff, forward it on down the chain... it really doesn&amp;#39;t matter.&lt;/p&gt;
+
+&lt;p&gt;As long as the service being called implements the libswarm API and properly sends/receives the libswarm messages it will fit into the chain.&lt;/p&gt;
+
+&lt;p&gt;In each of these examples I used &lt;code&gt;dockerserver&lt;/code&gt; on the front and &lt;code&gt;dockerclient&lt;/code&gt; on the back.  This is for convenience and the fact that these are working services.&lt;/p&gt;
+
+&lt;p&gt;It technically doesn&amp;#39;t even have to be Docker here.  Libswarm is completely independent of Docker.&lt;/p&gt;
+
+&lt;p&gt;I should also mention, libswarm uses &lt;a href=&quot;https://www.github.com/docker/libchan&quot;&gt;libchan&lt;/a&gt; for communication.&lt;/p&gt;
+
+&lt;p&gt;Libswarm is also still rough around the edges until the API gets nailed down fully.&lt;/p&gt;
+
+&lt;hr&gt;
+
+&lt;p&gt;TL;DR&lt;/p&gt;
+
+&lt;p&gt;libswarm is about providing a common API for composing otherwise completely separate tools/services.&lt;/p&gt;
+
+&lt;p&gt;swarmd lets you chain these libswarm services into something sort of like unix pipes.... I prefer the referring to it as a middleware chain.&lt;/p&gt;
+
+&lt;p&gt;For more info on libswarm, take a look at the &lt;a href=&quot;https://www.github.com/docker/libswarm&quot;&gt;git repo,&lt;/a&gt; and join us in #libswarm on freenode.&lt;/p&gt;
+
+&lt;p&gt;Thanks @markwrenn for the illustration&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Docker Quicktip #5: Backing up Volumes</title>
+   <link href="http://www.tech-d.net/2014/05/05/docker-quicktip-5-backing-up-volumes/"/>
+   <updated>2014-05-05T14:48:25+00:00</updated>
+   <id>http://www.tech-d.net/2014/05/05/docker-quicktip-5-backing-up-volumes</id>
+   <content type="html">&lt;p&gt;Data in Docker volumes is generally super important.  In fact if you are doing your containers correctly the stuff in the volumes is the only thing you need to worry about backing up as containers shouldn&amp;#39;t be storing anything at all.&lt;/p&gt;
+
+&lt;p&gt;So how do you access the data in volumes?&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;One way is to use &lt;code&gt;docker inspect&lt;/code&gt; so see where a container&amp;#39;s volumes are stored and use sudo to access that data.  This isn&amp;#39;t exactly ideal for a number of reasons:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;Insane paths&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Accessing data as root user&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Creating new data needs to be chowned/chmod&amp;#39;d properly so the container can read/write to it as well&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The preferred way is to use &lt;code&gt;--volumes-from&lt;/code&gt;.  When accessing the volume data you want to make sure you are using the same uid/gid as it was written in, so it&amp;#39;s a good idea to use the same image which was used to create that data.  With this method all your data is in the same exact locations as it would normally be.  No need to SSH, nsenter, or nsinit into the container to get at this stuff (&lt;a href=&quot;http://jpetazzo.github.io/2014/03/23/lxc-attach-nsinit-nsenter-docker-0-9/&quot;&gt;Attaching to a container with Docker 0.9 and libcontainer&lt;/a&gt;)...&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;docker run -it --rm --entrypoint /bin/sh --volumes-from  my/appimage -c &amp;quot;bash&amp;quot;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Recently I was building out the backup scheme for our soon to be in-production Docker-based server.  I wanted to be able to just blindly backup all specified volumes without needing to explicitly write out which volumes I wanted, since this could change over time.  We already know the data is important since it&amp;#39;s in a volume, so just give it to me.&lt;/p&gt;
+
+&lt;p&gt;For now I just want to pull in all volumes from all containers and do with them as I please.&lt;/p&gt;
+
+&lt;p&gt;Docker doesn&amp;#39;t currently do this with any sort of short-cut like --volumes-from since the volumes needed to be namespaced for container they are in (so as not to overwrite files from other containers).&lt;/p&gt;
+
+&lt;p&gt;I started to think about how to implement this feature in Docker, but I really need this now and not month or two from now (when it could possibly be merged in and released).&lt;/p&gt;
+
+&lt;p&gt;Technically &lt;code&gt;--volumes-from&lt;/code&gt; is just bind-mounting the host path of the given volumes into a new container, you could do this manually with &amp;quot;-v /var/lib/docker/path/to/volume:/container/path&amp;quot;&lt;/p&gt;
+
+&lt;p&gt;So I thought, well I&amp;#39;ll just use &lt;code&gt;docker inspect&lt;/code&gt; on everything, pipe the output to &lt;a href=&quot;http://stedolan.github.io/jq/&quot;&gt;jq&lt;/a&gt; and parse the info I needed... thankfully this was a huge pain to do (jq didn&amp;#39;t like the dir tree as a hash key).&lt;/p&gt;
+
+&lt;p&gt;After fiddling with jq for a bit I remembered that &lt;code&gt;docker inspect&lt;/code&gt; takes a &amp;quot;--format&amp;quot; option, which is a &lt;a href=&quot;http://golangtutorials.blogspot.com/2011/06/go-templates.html&quot;&gt;go-template&lt;/a&gt; format.  With this I can massage the output of `docker inspect to be whatever I want it to be, and so here is a little bash function I created to help me do this:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;volume_ars&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  docker inspect --format&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;-v :/volData &amp;#39;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$1&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This little snippet takes a container ID/name as input and spits out all of it&amp;#39;s volumes as bind-mount style arguments to be inserted into a &lt;code&gt;docker run&lt;/code&gt; command, for instance a container with a volume at &amp;quot;/example&amp;quot; would output &amp;quot;-v /volume/path/on/host:/volData//example&amp;quot;.&lt;/p&gt;
+
+&lt;p&gt;If a container has more than one volume it builds multiple &amp;quot;-v&amp;quot; arguments just as you might if you did it manually.  This output can be directly inserted into a &lt;code&gt;docker run&lt;/code&gt; command.&lt;/p&gt;
+
+&lt;p&gt;And to get all volumes, without getting duplicate host paths (because many of my containers will use the same volumes with &lt;code&gt;--volumes-from&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;volumes_args&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  docker inspect --format&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;-v :/volData &amp;#39;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+volume_hostPaths&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  docker inspect --format&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;  &amp;#39;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;nv&quot;&gt;volConfig&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;paths&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=()&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# store host paths so we can check if it&amp;#39;s already used&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; container in &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker ps -a -q&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;hostPaths&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;volume_hostPaths &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;container&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;})&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; hostPath in &lt;span class=&quot;nv&quot;&gt;$hostPaths&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;match&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;${paths[@]:0}&amp;quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; grep -o &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;hostPath&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;})&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[[&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;${match}&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;]]&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;then&lt;/span&gt;
+      paths+&lt;span class=&quot;o&quot;&gt;=(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;hostPath&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;volConfig&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;${volConfig} $(volumes_args ${container})&amp;quot;&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;fi&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;
+
+docker run -d &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;volConfig&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; --name mybackcontainer my/backup-image
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</content>
+ </entry>
+ 
+ <entry>
+   <title>Docker Quicktip #4 - Remote volumes</title>
+   <link href="http://www.tech-d.net/2014/03/29/docker-quicktip-4-remote-volumes/"/>
+   <updated>2014-03-29T22:21:40+00:00</updated>
+   <id>http://www.tech-d.net/2014/03/29/docker-quicktip-4-remote-volumes</id>
+   <content type="html">&lt;p&gt;This one builds off the idea of using &lt;a href=&quot;http://www.tech-d.net/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/&quot; title=&quot;Persistent volumes with Docker – Data-only container pattern&quot;&gt;data-only containers&lt;/a&gt;.  Let&amp;#39;s step into the unknown and add a second host into the mix.&lt;/p&gt;
+
+&lt;p&gt;What do you use when you need to share data with containers across hosts?
+The answer?  Well... as you normally would... NFS (or insert your file share service of choice).&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;First, let&amp;#39;s startup an NFS server... &lt;a href=&quot;https://index.docker.io/u/cpuguy83/nfs-server/&quot;&gt;it just so happens I created an image for just this purpose&lt;/a&gt;.  You should check out the github repo if you want the details in how it works... but essentially all you need to do is add each directory you want to to the end of your run command.
+** I should note, this nfs server is not secured or optimized, use at your own risk **&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;docker run -d --name nfs --privileged cpuguy83/nfs-server /tmp /home&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Here, the &lt;code&gt;/tmp&lt;/code&gt; folder and the &lt;code&gt;/home&lt;/code&gt; folder are being shared by NFS.  You can add however many dirs you want, but they must exist on the server.&lt;/p&gt;
+
+&lt;p&gt;Now let&amp;#39;s fire up the nfs client:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;docker run -d --link nfs:nfs --privileged -v /mnt cpuguy83/nfs-client /home:/mnt&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Here, you specify the s source mount and the mount point in the container as /path/in/server:/mount/to/here.  So &lt;code&gt;/home&lt;/code&gt; on the nfs-server is mounted to &lt;code&gt;/mnt&lt;/code&gt; on the client.
+We are also linking the containers, what&amp;#39;s important is that the internal side is called nfs as we are using the env var generated by this link to get the IP of the nfs server.
+Now, links don&amp;#39;t currently work across docker hosts, so what good does this do?  Not much locally (no point in using NFS on a single host)... but you can either use the ambassador pattern or manually provide the env var in the run command (&lt;code&gt;NFS_PORT_2049_TCP_ADDR&lt;/code&gt;) with the IP of the nfs server when doing multi-host.&lt;/p&gt;
+
+&lt;p&gt;When you combine this with using volumes-from things begin to get a bit more powerful.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# NFS Server&lt;/span&gt;
+docker run -d -v /tmp ubuntu --name foo bash -c &lt;span class=&quot;s2&quot;&gt;&amp;quot;echo foo &amp;amp;gt; /tmp/foo&amp;quot;&lt;/span&gt;
+docker run -d --name nfs-server --privileged --volumes-from foo cpuguy83/nfs-server /tmp
+docker inspect --format &lt;span class=&quot;s1&quot;&gt;&amp;#39;&amp;#39;&lt;/span&gt; nfs-server
+10.0.1.100
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Remote NFS Client&lt;/span&gt;
+docker run -d --name nfs-client --privileged -e &lt;span class=&quot;nv&quot;&gt;NFS_PORT_2049_TCP_ADDR&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;10.0.1.100 -v /tmp cpuguy83/nfs-client /tmp:/tmp
+docker run --rm --volumes-from nfs-client ubuntu cat /tmp/foo
+foo
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;You&amp;#39;ll notice you must use &lt;code&gt;--privileged&lt;/code&gt; for both the nfs-server and client.  In the (near) future Docker will have finer grained control of the capabilities available to a specific container and we can just add the required ones here instead of opening up the full &lt;code&gt;--privileged&lt;/code&gt;.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Docker quicktip #3 - ONBUILD</title>
+   <link href="http://www.tech-d.net/2014/02/06/docker-quicktip-3-onbuild/"/>
+   <updated>2014-02-06T11:41:10+00:00</updated>
+   <id>http://www.tech-d.net/2014/02/06/docker-quicktip-3-onbuild</id>
+   <content type="html">&lt;p&gt;Docker 0.8 came out today, with it a slew of fantastic enhancements.  Today we&amp;#39;ll be looking at one of them: &lt;code&gt;ONBUILD&lt;/code&gt;.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;&lt;code&gt;ONBUILD&lt;/code&gt; is a new instruction for the Dockerfile.  It is for use when creating a base image and you want to defer instructions to child images.  For example:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-Dockerfile&quot; data-lang=&quot;Dockerfile&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Dockerfile&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; busybox
+&lt;span class=&quot;n-Keyword&quot;&gt;ONBUILD&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;You won&amp;#39;t see me until later&amp;quot;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;docker build -t me/no_echo_here .
+
+Uploading context  2.56 kB
+Uploading context
+Step 0 : FROM busybox
+Pulling repository busybox
+769b9341d937: Download complete
+511136ea3c5a: Download complete
+bf747efa0e2f: Download complete
+48e5f45168b9: Download complete
+ ---&amp;amp;gt; 769b9341d937
+Step 1 : ONBUILD RUN echo &amp;quot;You won&amp;#39;t see me until later&amp;quot;
+ ---&amp;amp;gt; Running in 6bf1e8f65f00
+ ---&amp;amp;gt; f864c417cc99
+Successfully built f864c417cc9
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Here the &lt;code&gt;ONBUILD&lt;/code&gt; instruction is read, not run, but stored for later use.&lt;/p&gt;
+
+&lt;p&gt;Here is the later use:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-Dockerfile&quot; data-lang=&quot;Dockerfile&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Dockerfile&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; me/no_echo_here
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;docker build -t me/echo_here .
+Uploading context  2.56 kB
+Uploading context
+Step 0 : FROM cpuguy83/no_echo_here
+
+# Executing 1 build triggers
+Step onbuild-0 : RUN echo &amp;quot;You won&amp;#39;t see me until later&amp;quot;
+ ---&amp;amp;gt; Running in ebfede7e39c8
+You won&amp;#39;t see me until later
+ ---&amp;amp;gt; ca6f025712d4
+ ---&amp;amp;gt; ca6f025712d4
+Successfully built ca6f025712d4
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The &lt;code&gt;ONBUILD&lt;/code&gt; instruction only gets run when building the cpuguy83/echo_here image.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;ONBUILD&lt;/code&gt; gets run just after the FROM and before any other instructions in a child image.&lt;/p&gt;
+
+&lt;p&gt;You can also have multiple &lt;code&gt;ONBUILD&lt;/code&gt; instructions.&lt;/p&gt;
+
+&lt;p&gt;Why would you want this?  It turns out it&amp;#39;s pretty darn awesome, and powerful.  I have a demo github repo setup for this:  &lt;a href=&quot;https://github.com/cpuguy83/docker-onbuild_demo&quot;&gt;Docker ONBUILD Demo&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Before diving into this, I just want to say I&amp;#39;ve probably used ONBUILD a bit excessively here in order to get the point across for what ONBUILD does and what it can do, it&amp;#39;s up to you how to use it in your projects.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-Dockerfile&quot; data-lang=&quot;Dockerfile&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Dockerfile&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; ubuntu:12.04
+
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; apt-get update -qq &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; apt-get install -y ca-certificates sudo curl git-core
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; rm /bin/sh &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; ln -s /bin/bash /bin/sh
+
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; locale-gen  en_US.UTF-8
+&lt;span class=&quot;k&quot;&gt;ENV&lt;/span&gt; LANG en_US.UTF-8
+&lt;span class=&quot;k&quot;&gt;ENV&lt;/span&gt; LANGUAGE en_US.UTF-8
+&lt;span class=&quot;k&quot;&gt;ENV&lt;/span&gt; LC_ALL en_US.UTF-8
+
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; curl -L https://get.rvm.io &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; bash -s stable
+&lt;span class=&quot;k&quot;&gt;ENV&lt;/span&gt; PATH /usr/local/rvm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; /bin/bash -l -c rvm requirements
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /usr/local/rvm/scripts/rvm &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; rvm install ruby
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; rvm all &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; gem install bundler
+
+&lt;span class=&quot;n-Keyword&quot;&gt;ONBUILD&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;ADD&lt;/span&gt; . /opt/rails_demo
+&lt;span class=&quot;n-Keyword&quot;&gt;ONBUILD&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;WORKDIR&lt;/span&gt; /opt/rails_demo
+&lt;span class=&quot;n-Keyword&quot;&gt;ONBUILD&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; rvm all &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; bundle install
+&lt;span class=&quot;n-Keyword&quot;&gt;ONBUILD&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;CMD&lt;/span&gt; rvm all &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; bundle &lt;span class=&quot;nb&quot;&gt;exec &lt;/span&gt;rails server
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This Dockerfile is doing some initial setup of a base image.  Installs Ruby and bundler. Pretty typical stuff.  At the end are the ONBUILD instructions.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;ONBUILD ADD . /opt/rails_demo&lt;/code&gt;
+Tells any child image to add everything in the current directory to /opt/rails&lt;em&gt;demo.  Remember, this only gets run from a child image, that is when another image uses this one as a base (or FROM).  And it just so happens if you look in the repo I have a skeleton rails app in rails&lt;/em&gt;demo that has it&amp;#39;s own Dockerfile in it, we&amp;#39;ll take a look at this later.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;ONBUILD WORKDIR /opt/rails_demo&lt;/code&gt;
+Tells any child image to set the working directory to /opt/rails_demo, which is where we told ADD to put any project files&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;ONBUILD RUN rvm all do bundle install&lt;/code&gt;
+Tells any child image to have bundler install all gem dependencies, because we are assuming a Rails app here.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;ONBUILD CMD rvm all do bundle exec rails server&lt;/code&gt;
+Tells any child image to set the &lt;code&gt;CMD&lt;/code&gt; to start the rails server&lt;/p&gt;
+
+&lt;p&gt;Ok, so let&amp;#39;s see this image build, go ahead and do this for yourself so you can see the output.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;git clone git@github.com:cpuguy83/docker-onbuild_demo.git
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;docker-onbuild_demo
+docker build -t cpuguy83/onbuild_demo .
+
+Step &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; : FROM ubuntu:12.04
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 9cd978db300e
+Step &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; : RUN apt-get update -qq &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; apt-get install -y ca-certificates sudo curl git-core
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in b32a089b7d2d
+&lt;span class=&quot;c&quot;&gt;# output supressed&lt;/span&gt;
+ldconfig deferred processing now taking place
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; d3fdefaed447
+Step &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; : RUN rm /bin/sh &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; ln -s /bin/bash /bin/sh
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in f218cafc54d7
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 21a59f8613e1
+Step &lt;span class=&quot;m&quot;&gt;3&lt;/span&gt; : RUN locale-gen  en_US.UTF-8
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in 0fcd7672ddd5
+Generating locales...
+&lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;
+Generation complete.
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; aa1074531047
+Step &lt;span class=&quot;m&quot;&gt;4&lt;/span&gt; : ENV LANG en_US.UTF-8
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in dcf936d57f38
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; b9326a787f78
+Step &lt;span class=&quot;m&quot;&gt;5&lt;/span&gt; : ENV LANGUAGE en_US.UTF-8
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in 2133c36335f5
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 3382c53f7f40
+Step &lt;span class=&quot;m&quot;&gt;6&lt;/span&gt; : ENV LC_ALL en_US.UTF-8
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in 83f353aba4c8
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; f849fc6bd0cd
+Step &lt;span class=&quot;m&quot;&gt;7&lt;/span&gt; : RUN curl -L https://get.rvm.io &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; bash -s stable
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in b53cc257d59c
+&lt;span class=&quot;c&quot;&gt;# output supressed&lt;/span&gt;
+---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 482a9f7ac656
+Step &lt;span class=&quot;m&quot;&gt;8&lt;/span&gt; : ENV PATH /usr/local/rvm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in c4666b639c70
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; b5d5c3e25730
+Step &lt;span class=&quot;m&quot;&gt;9&lt;/span&gt; : RUN /bin/bash -l -c rvm requirements
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in 91469dbc25a6
+&lt;span class=&quot;c&quot;&gt;# output supressed&lt;/span&gt;
+Step &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt; : RUN &lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /usr/local/rvm/scripts/rvm &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&amp;amp;&lt;/span&gt;amp&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; rvm install ruby
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in cb4cdfcda68f
+&lt;span class=&quot;c&quot;&gt;# output supressed&lt;/span&gt;
+Step &lt;span class=&quot;m&quot;&gt;11&lt;/span&gt; : RUN rvm all &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; gem install bundler
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in 9571104b3b65
+Successfully installed bundler-1.5.3
+Parsing documentation &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; bundler-1.5.3
+Installing ri documentation &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; bundler-1.5.3
+Done installing documentation &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; bundler after &lt;span class=&quot;m&quot;&gt;3&lt;/span&gt; seconds
+&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; gem installed
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; e2ea33486d62
+Step &lt;span class=&quot;m&quot;&gt;12&lt;/span&gt; : ONBUILD ADD . /opt/rails_demo
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in 5bef85f266a4
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 4082e2a71c7e
+Step &lt;span class=&quot;m&quot;&gt;13&lt;/span&gt; : ONBUILD WORKDIR /opt/rails_demo
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in be1a06c7f9ab
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 23bec71dce21
+Step &lt;span class=&quot;m&quot;&gt;14&lt;/span&gt; : ONBUILD RUN rvm all &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; bundle install
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in 991da8dc7f61
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 1547bef18de8
+Step &lt;span class=&quot;m&quot;&gt;15&lt;/span&gt; : ONBUILD CMD rvm all &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; bundle &lt;span class=&quot;nb&quot;&gt;exec &lt;/span&gt;rails server
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Running in c49139e13a0c
+ ---&lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;gt&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 23c388fb84c1
+Successfully built 23c388fb84c1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now let&amp;#39;s take a look at that Dockerfile in the rails_demo project:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-Dockerfile&quot; data-lang=&quot;Dockerfile&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Dockerfile&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; cpuguy83/onbuild_demo
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;WAT?? This Dockerfile is a grand total of one line.  It&amp;#39;s only one line because we setup everything in the base image.  The only pre-req is that the Dockerfile is built from within the Rails project tree.  When we build this image, the ONBUILD commands from cpuguy83/onbuild_demo will be inserted just after the FROM instruction here.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Remember, this aggressive use of &lt;code&gt;ONBUILD&lt;/code&gt; may not be optimal for your project and is for demo purposes... not to say it&amp;#39;s not ok :)&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;So let&amp;#39;s run this:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;cd rails_demo
+docker build -t cpuguy83/rails_demo .
+
+Step onbuild-0 : ADD . /opt/rails_demo
+ ---&amp;amp;gt; 11c1369a8926
+Step onbuild-1 : WORKDIR /opt/rails_demo
+ ---&amp;amp;gt; Running in 82def1878360
+ ---&amp;amp;gt; 39f8280cdca6
+Step onbuild-2 : RUN rvm all do bundle install
+ ---&amp;amp;gt; Running in 514d5fc643f1
+# output supressed
+Step onbuild-3 : CMD rvm all do bundle exec rails server
+ ---&amp;amp;gt; Running in df4a2646e4d9
+ ---&amp;amp;gt; b78c1813bd44
+ ---&amp;amp;gt; b78c1813bd44
+Successfully built b78c1813bd44
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Then we can run the rails_demo image and have the rails server fire right up&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;docker run -i -t cpuguy83/rails_demo
+
+=&amp;amp;gt; Booting WEBrick
+=&amp;amp;gt; Rails 3.2.14 application starting in development on http://0.0.0.0:3000
+=&amp;amp;gt; Call with -d to detach
+=&amp;amp;gt; Ctrl-C to shutdown server
+[2014-02-06 11:53:20] INFO  WEBrick 1.3.1
+[2014-02-06 11:53:20] INFO  ruby 2.1.0 (2013-12-25) [x86_64-linux]
+[2014-02-06 11:53:20] INFO  WEBrick::HTTPServer#start: pid=193 port=3000
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;TLDR; &lt;code&gt;ONBUILD&lt;/code&gt;... awesome.  Use it to defer build instructions to images built from a base image.  Use it to more easily build images from a common base but differ in some way, such as different git branches, or different projects entirely.&lt;/p&gt;
+
+&lt;p&gt;With great power comes great responsibility.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Docker Quicktip #2: exec it, please!</title>
+   <link href="http://www.tech-d.net/2014/01/27/docker-quicktip-2-exec-it/"/>
+   <updated>2014-01-27T14:26:37+00:00</updated>
+   <id>http://www.tech-d.net/2014/01/27/docker-quicktip-2-exec-it</id>
+   <content type="html">&lt;p&gt;Often when creating a Docker container it is necessary to do a bit of setup before starting the main process you wanted. Sometimes this is just a one-time setup for the first time the container starts (setting up database users, importing data, etc), other times it&amp;#39;s setting up the environment to get your process going (as many init.d scripts also do). In any case some script is needed to run before running the main application that the container was created for.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;Let&amp;#39;s take an image I recently created: &lt;a href=&quot;https://github.com/cpuguy83/docker-postgres/tree/d59c8578fabfd2e5a417d499836cd1643eac92b4&quot;&gt;github: cpuguy83/docker-postgres&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Dockerfile&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-Dockerfile&quot; data-lang=&quot;Dockerfile&quot;&gt;&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; cpuguy83/ubuntu
+
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; apt-get update &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get install -y postgresql postgresql-contrib libpq-dev
+&lt;span class=&quot;k&quot;&gt;ADD&lt;/span&gt; pg_hba.conf /etc/postgresql/9.1/main/pg_hba.conf
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; chown postgres.postgres /etc/postgresql/9.1/main/pg_hba.conf
+&lt;span class=&quot;k&quot;&gt;ADD&lt;/span&gt; postgresql.conf /etc/postgresql/9.1/main/postgresql.conf
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; chown postgres.postgres /etc/postgresql/9.1/main/postgresql.conf
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; sysctl -w kernel.shmmax&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;4418740224&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; /etc/init.d/postgresql start &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; su postgres -c &lt;span class=&quot;s2&quot;&gt;&amp;quot;createuser -s -d root &amp;amp;&amp;amp; psql -c \&amp;quot;ALTER USER root with PASSWORD &amp;#39;pgpass&amp;#39;; CREATE USER replication REPLICATION LOGIN CONNECTION LIMIT 1 ENCRYPTED PASSWORD &amp;#39;replpass&amp;#39;\&amp;quot;&amp;quot;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;EXPOSE&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;5432&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;VOLUME&lt;/span&gt; /var/lib/postgresql
+&lt;span class=&quot;k&quot;&gt;ADD&lt;/span&gt; pg_start.sh /usr/local/bin/
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; chmod +x /usr/local/bin/pg_start.sh
+
+&lt;span class=&quot;k&quot;&gt;CMD&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;/usr/local/bin/pg_start.sh&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&lt;strong&gt;pgstart.sh&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/bash&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[[&lt;/span&gt; ! -z &lt;span class=&quot;s2&quot;&gt;&amp;quot;$MASTER_PORT_5432_TCP_ADDR&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;]]&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;then&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;conn_info&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;host=${MASTER_PORT_5432_TCP_ADDR} user=replication password=${REPLICATION_PASS}&amp;quot;&lt;/span&gt;
+
+    &lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;primary_conninfo = &amp;#39;${conn_info}&amp;#39;&amp;quot;&lt;/span&gt; &amp;gt; /var/lib/postgresql/9.1/main/recovery.conf
+    &lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;standby_mode = &amp;#39;on&amp;#39;&amp;quot;&lt;/span&gt; &amp;gt;&amp;gt; /var/lib/postgresql/9.1/main/recovery.conf
+&lt;span class=&quot;k&quot;&gt;fi&lt;/span&gt;
+sysctl -w kernel.shmmax&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;4418740224
+su postgres -c &lt;span class=&quot;s2&quot;&gt;&amp;quot;/usr/lib/postgresql/9.1/bin/postgres -D /var/lib/postgresql/9.1/main -c config_file=/etc/postgresql/9.1/main/postgresql.conf $PG_CONFIG&amp;quot;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;There are a couple of issues with this, which I&amp;#39;ll address in a future post. Here I&amp;#39;ll focus on the &lt;code&gt;CMD&lt;/code&gt; line of the Dockerfile and the last line of pg_start.sh.&lt;/p&gt;
+
+&lt;p&gt;First, let&amp;#39;s change &lt;code&gt;CMD&lt;/code&gt; to &lt;code&gt;ENTRYPOINT&lt;/code&gt; as we learned in the in the &lt;a href=&quot;http://www.tech-d.net/2014/01/27/docker-quicktip-1-entrypoint/&quot; title=&quot;Docker Quicktip #1: Entrypoint&quot;&gt;previous article&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The next bit is becoming a pet-peeve of mine when using some of my older images.&lt;/p&gt;
+
+&lt;p&gt;When calling postgres we are just doing it directly (well... through &lt;code&gt;su&lt;/code&gt;, but still directly in terms of the process).&lt;/p&gt;
+
+&lt;p&gt;Calling it this way breaks the world. With postgres it might not be too bad but with other apps it may wreck havoc.&lt;/p&gt;
+
+&lt;p&gt;As it stands right now if we try to stop this container docker will hang for a few seconds and then just kill it. Go ahead... try it. There is even a setting in Docker for how long to wait before killing the container (docker stop -t Nseconds, default is 10) with &lt;code&gt;SIGKILL&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Run &lt;code&gt;docker logs $container_id&lt;/code&gt; to see the proof.&lt;/p&gt;
+
+&lt;p&gt;Why is it doing this? The signals to stop the process are being sent to the startup script and not postgres. I am not trapping signals in my startup script... nor should I be.&lt;/p&gt;
+
+&lt;p&gt;So how do I fix it? With &lt;code&gt;exec&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;#39;s change the last line of pg_start to use exec instead:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;exec su postgres -c &amp;quot;/usr/lib/postgresql/9.1/bin/postgres -D /var/lib/postgresql/9.1/main -c config_file=/etc/postgresql/9.1/main/postgresql.conf $PG_CONFIG&amp;quot;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;There we go, docker will now cleanly shutdown my postgres process instead of &lt;code&gt;SIGKILL&lt;/code&gt;ing it.&lt;/p&gt;
+
+&lt;p&gt;Again, run &lt;code&gt;docker logs $container_id&lt;/code&gt; for the proof.&lt;/p&gt;
+
+&lt;p&gt;Docker allows you to proxy all signals (this is enabled by default) to the running process in the container. Need to send HUP to the running process in the container? Send it to the docker container process. You can even use this functionality to run process monitoring on your host for your containerized processes. See &lt;a href=&quot;http://docs.docker.io/en/latest/use/host_integration/&quot;&gt;Docker host integration&lt;/a&gt; for an example.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Docker Quicktip #1: Entrypoint</title>
+   <link href="http://www.tech-d.net/2014/01/27/docker-quicktip-1-entrypoint/"/>
+   <updated>2014-01-27T02:51:50+00:00</updated>
+   <id>http://www.tech-d.net/2014/01/27/docker-quicktip-1-entrypoint</id>
+   <content type="html">&lt;p&gt;The first tip is aptly named &amp;quot;Entrypoint&amp;quot;. In this tips I kind of expect that you&amp;#39;ve played around with Docker a bit, probably even have some containers running for your dev environment.  So, in short, if you haven&amp;#39;t played yet, go play and come back!&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;Entrypoint is great.  It&amp;#39;s pretty much like &lt;code&gt;CMD&lt;/code&gt; but essentially let&amp;#39;s you use re-purpose &lt;code&gt;CMD&lt;/code&gt; as runtime arguments to &lt;code&gt;ENTRYPOINT&lt;/code&gt;. For example...&lt;/p&gt;
+
+&lt;p&gt;Instead of:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;docker run -i -t -rm busybox /bin/echo foo&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;You can do:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;docker run -i -t -rm -entrypoint /bin/echo busybox foo&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;This sets the entrypoint, or the command that is executed when the container starts, to call /bin/echo, and then passes &amp;quot;foo&amp;quot; as an argument to /bin/echo.&lt;/p&gt;
+
+&lt;p&gt;Or you can do, in a Dockerfile:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-Dockerfile&quot; data-lang=&quot;Dockerfile&quot;&gt;&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; busybox
+
+&lt;span class=&quot;k&quot;&gt;ENTRYPOINT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;/bin/echo&amp;quot;&lt;/span&gt;, &lt;span class=&quot;s2&quot;&gt;&amp;quot;foo&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker build -rm -t me/echo .
+docker run -i -t -rm me/echo bar
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This passes bar as an additional argument into /bin/echo foo, resulting in &lt;code&gt;/bin/echo foo bar&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Why would you want this?  You can think of it as turning &lt;code&gt;CMD&lt;/code&gt; into a set of optional arguments for running the container.  You can use it to make the container much more versatile. This will lead into the next tip &amp;quot;Exec it&amp;quot;&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Persistent volumes with Docker - Data-only container pattern</title>
+   <link href="http://www.tech-d.net/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/"/>
+   <updated>2013-12-16T16:32:42+00:00</updated>
+   <id>http://www.tech-d.net/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern</id>
+   <content type="html">&lt;p&gt;Docker has an option to allow specific folders in a container to be mapped to the normal filesystem on the host.  This allows us to have data in the container without making the data part of the Docker image, and without being bound to AUFS.&lt;/p&gt;
+
+&lt;p&gt;There are a couple of issues with using volumes in certain scenarios:&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;ol&gt;
+&lt;li&gt; Volumes are container specific, when you create a new container, even with the same image, you do not have access to the data.&lt;/li&gt;
+&lt;li&gt; Since image layers are built using containers, data saved to folders which have been specified as a volume does not make it to the next layer, or your final container&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;If you want data to persist between updated containers you have to manually map data to the host outside the normal, container-specific mount points.&lt;/p&gt;
+
+&lt;p&gt;For example, when creating a container:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker run -d -v /var/container_data/mysql:/var/lib/mysql me/awesome_mysql_image
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This, however, is generally not a good idea as you are tying the container to that host and you lose one of the things that makes Docker great: portability.&lt;/p&gt;
+
+&lt;p&gt;In addition to this, you&amp;#39;ve now created a container storage location that is not under Docker&amp;#39;s control.&lt;/p&gt;
+
+&lt;p&gt;But... data must be able to be persisted, especially in the use case above, so new versions of an image can be used to replace the current container... so we take the risk and do it anyway.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Introducing: Data-only containers&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Volumes are still great!  We can still use them and use them as intended by our Docker overlords!&lt;/p&gt;
+
+&lt;p&gt;Instead of manually setting these mount points on the docker host, let&amp;#39;s take the concept of SRP (Single Responsibility Principle) a bit farther.&lt;/p&gt;
+
+&lt;p&gt;We can create a container which is solely for storing data for another container:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-Dockerfile&quot; data-lang=&quot;Dockerfile&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Dockerfile&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; busybox
+&lt;span class=&quot;k&quot;&gt;VOLUME&lt;/span&gt; /var/lib/mysql
+&lt;span class=&quot;k&quot;&gt;CMD&lt;/span&gt; /bin/sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Create the image:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;docker build -t cpuguy83/mysql_datastore&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;And create the container:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;docker run -i -t -name mysql_data cpuguy83/mysql_datastore&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;or simply&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;docker run -i -t -name mysql_data -v /var/lib/mysql busybox /bin/sh&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Great, so now we have a container which has a volume for /var/lib/mysql... now what.&lt;/p&gt;
+
+&lt;p&gt;Docker allows us to pull in volumes from another container to use in our own... using the above mysql example this would look like:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;docker run -d -volumes-from mysql_data me/awesome_mysql_image&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Here, all data being saved by mysql will be stored in the volume specified by mysql_data container.&lt;/p&gt;
+
+&lt;p&gt;Since the mysql_data container likely won&amp;#39;t ever need to be updated, and if it does we can easily handle moving the data around as needed, we essentially work-around the issues listed above and we still have good portability.&lt;/p&gt;
+
+&lt;p&gt;We can now create as many mysql instances as we can handle and use volumes from as many mysql_data style containers as we want as well (provided unique naming or use of container ID&amp;#39;s).  This can much more easily be scripted than mounting folders ourselves since we are letting docker do the heavy lifting.&lt;/p&gt;
+
+&lt;p&gt;One thing that&amp;#39;s really cool is that these data-only containers don&amp;#39;t even need to be running, it just needs to exist.&lt;/p&gt;
+
+&lt;p&gt;This pattern definitely does not fit all use cases, but it may fit yours! Try it out!&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Burn Brighter</title>
+   <link href="http://www.tech-d.net/social/2013/08/11/burn-brighter/"/>
+   <updated>2013-08-11T02:37:51+00:00</updated>
+   <id>http://www.tech-d.net/social/2013/08/11/burn-brighter</id>
+   <content type="html">&lt;p&gt;Nearly 12 years ago President George W. Bush, standing in the rubble of the World Trade Center, proclaimed on his megaphone that the unspeakable act of terrorism was carried out on the brightest beacon of freedom in the world.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;Here we stand. Twelve years of war in the name of a world free of terrorism. Countless lives destroyed; soldiers, terrorists, and innocents alike.&lt;/p&gt;
+
+&lt;p&gt;This is not justice.&lt;/p&gt;
+
+&lt;p&gt;The beacon of freedom dims by the day as our rights are stripped away, in the name of protection.&lt;/p&gt;
+
+&lt;p&gt;This is not protection.&lt;/p&gt;
+
+&lt;p&gt;People cite Edmund Burke on evil prevailing unless the good intervene, but I say to you that there is NO good in killing.&lt;/p&gt;
+
+&lt;p&gt;We are the good that has become evil in our own fight against it.&lt;/p&gt;
+
+&lt;p&gt;Good intentions is not enough to be good!&lt;/p&gt;
+
+&lt;p&gt;Evil fought with anything but good will give birth to even more horrifying evil.&lt;/p&gt;
+
+&lt;p&gt;We have spread our evil across the Earth in more ways than just this, but our war has accelerated it&amp;#39;s expansion unlike anything before.&lt;/p&gt;
+
+&lt;p&gt;A terrorist dead is a father or son, or mother or daughter killed. It leaves behind a family in shambles and hate.&lt;/p&gt;
+
+&lt;p&gt;Evil gives birth to new,  atrocious evil.&lt;/p&gt;
+
+&lt;p&gt;Soon generations have passed and there are no more intentions, just ignorant, putrid, and festering hate.&lt;/p&gt;
+
+&lt;p&gt;The actions of those men on 9/11/2001, nor any actions before or after, do not serve to justify this war without an end.&lt;/p&gt;
+
+&lt;p&gt;The beacon does not burn as bright today as it once did, but it can and will again, ever brighter after hard lessons learned.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Threaded Ruby in Production - Rbx edition</title>
+   <link href="http://www.tech-d.net/2013/06/18/threaded-ruby-in-production-rbx-edition/"/>
+   <updated>2013-06-18T02:12:00+00:00</updated>
+   <id>http://www.tech-d.net/2013/06/18/threaded-ruby-in-production-rbx-edition</id>
+   <content type="html">&lt;p&gt;At enVu we use Ruby and Rails to bring together various pieces of 3rd party software to make them integrate a bit better with our business requirements.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;Until recently we used MRI Ruby 1.9.3 + Phusion Passenger, which worked well for us but were limited by MRI&amp;#39;s &lt;a href=&quot;http://ablogaboutcode.com/2012/02/06/the-ruby-global-interpreter-lock/&quot; title=&quot;GIL&quot;&gt;GIL&lt;/a&gt;. Being a startup on a limited budget means we also have limited resources.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Looking at the alternatives without a GIL&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;&lt;em&gt;JRuby&lt;/em&gt;&lt;/strong&gt;
+I first turned to JRuby. I&amp;#39;d had some experience with it in the past for a small project, but nothing for something as large as a Rails project. What I already knew I didn&amp;#39;t like was using Java. I hate setting up the VM and being limited the the configured VM&amp;#39;s environment (max RAM and all). Then there was having to find replacements for C-Ext libraries.
+This is not to say I don&amp;#39;t like JRuby, I do at least for interfacing with Java libraries and I greately appreciate all the work the JRuby guys are doing. I decided I did not want to move forward with making the move over.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;&lt;em&gt;Rubinius&lt;/em&gt;&lt;/strong&gt;
+I&amp;#39;d been looking at Rubinius on and off. The first thing I&amp;#39;d noticed was absolutely no updates to the official &lt;a href=&quot;http://rubini.us&quot; title=&quot;Rubinius Website&quot;&gt;Rubinius Website&lt;/a&gt; in quite some time (something which has now changed), which put me off a little since it seemed like there was no activity, but then looking at the Github repo seemed to paint a different picture entirely. After doing a bit more research on it I decided to give it a shot.&lt;/p&gt;
+
+&lt;p&gt;Rubinius &amp;lt; 2.0 still has a GIL and 2.0 is currently, at the time of this writing, in the release candidate phase. You should not be put off by this, except in some edge cases it should prove to be stable for you, but do test first! Unlike JRuby, it supports C-Extensions, so you should be able to use all the gems you are familiar with and are currently using.
+The biggest issue you are going to have is ensuring that your code and the gems you are using is threadsafe.
+If you do run into an issue create an issue on Github and hop on to #rubinius on Freenode.&lt;/p&gt;
+
+&lt;p&gt;To pair with your GIL-free environment you&amp;#39;ll also want to use a threaded application server, &lt;a href=&quot;http://puma.io&quot; title=&quot;Puma&quot;&gt;Puma.io&lt;/a&gt; fits the bill perfectly. It is extremely fast and uses few resources.&lt;/p&gt;
+
+&lt;p&gt;Also check out &lt;a href=&quot;http://mperham.github.io/sidekiq/&quot; title=&quot;Sidekiq&quot;&gt;Sidekiq&lt;/a&gt; for fast, threaded background job processing.&lt;/p&gt;
+
+&lt;p&gt;All in all, aside from fixing any thread safety issues in your app, Rubinius should be a near drop-in replacement for MRI.&lt;/p&gt;
+
+&lt;p&gt;Under MRI I was using 2.5GB of RAM and generally sat around 3.0 System load (5min) - MRI, Sidekiq(mutli-process), Passenger.
+With Rubinius that RAM usage has dropped to 1.5GB and 1.75 System load (5min) - Rubinius, Sidekiq, Puma&lt;/p&gt;
+
+&lt;p&gt;It is really exciting to see such a move to fully threaded Ruby environments!&lt;/p&gt;
+
+&lt;p&gt;Also wanted to give a big thank you to @dbussink for all the help in fixing our rbx+sidekiq issues.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Barriers to TDD</title>
+   <link href="http://www.tech-d.net/2013/04/25/barriers-to-tdd/"/>
+   <updated>2013-04-25T16:33:50+00:00</updated>
+   <id>http://www.tech-d.net/2013/04/25/barriers-to-tdd</id>
+   <content type="html">&lt;p&gt;Any, and hopefully every, developer has probably heard the TDD mantra. I only had to hear it once to know it was the way to go, I&amp;#39;m sure others had to have it repeated over and over before they got it that it really is a better way to do development. If you haven&amp;#39;t reached that point yet I&amp;#39;m sure I know a few people with bats and crowbars who can beat it into you some more until you agree too! ;)&lt;/p&gt;
+
+&lt;p&gt;Knowing is only half the battle, there are other, seemingly much larger, barriers to entry:&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;ul&gt;
+&lt;li&gt;minitest&lt;/li&gt;
+&lt;li&gt;test-unit&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;rspec&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;capybara&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;factory_girl&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;fabrication&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;fixtures&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;database_cleaner&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;spork&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;zeus&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;guard&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;spring&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;cucumber&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;selenium&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;shoulda&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;unit tests&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;integration tests&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;acceptance tests&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;model tests&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;feature specs&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;request specs&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;stubs&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;mocks&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;TDD&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;BDD&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;TFD&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;I&amp;#39;m sure this list could be bigger if I tried.
+The real problem with this isn&amp;#39;t the list. The list is great. It&amp;#39;s just that it can be daunting when you are trying to figure things out. I am the sole developer at my company so I don&amp;#39;t really have anyone to go to. Going in front of a group of devs and saying you don&amp;#39;t test is a bit embarrassing, and indeed going to conferences where TDD is hit hard makes you(me) feel a bit dirty.&lt;/p&gt;
+
+&lt;p&gt;In reality you only really need a couple of those gems listed to get started.
+_For people reading this who don&amp;#39;t do testing, check out these to get started:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;rspec - main test suite&lt;/li&gt;
+&lt;li&gt;capybara - when you are ready to test your views&lt;/li&gt;
+&lt;li&gt;factorygirl - for test data&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Then once you get all that down there is the whole process of actually doing the TDD bit where you are writing tests before you write production code. This can be tricky to get used to doing, and you&amp;#39;ll likely quickly realize how poorly written your existing code actually is (because it&amp;#39;s not easily testable!)&lt;/p&gt;
+
+&lt;p&gt;Some (hopefully?)Pro tips I&amp;#39;ve picked up:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Keep your tests fast&lt;/li&gt;
+&lt;li&gt;Keep methods short&lt;/li&gt;
+&lt;li&gt;In each test you should be able to stub objects that the tested method needs, so...&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;stuff&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;# some stuff&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;foos&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Foo&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;where&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;foos&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;each&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&lt;span style=&quot;line-height: 1.714285714;font-size: 1rem&quot;&gt;&lt;span style=&quot;line-height: 1.714285714;font-size: 1rem&quot;&gt; Is not good since now you need some fake Foo records saved in the DB, which makes your tests slow. Instead do:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;stuff&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;foos&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;my_foo_finder&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;foos&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;each&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;my_foo_finder&lt;/span&gt;
+  &lt;span class=&quot;no&quot;&gt;Foo&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;where&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Could still be better, but at least we can test &lt;code&gt;#stuff&lt;/code&gt; more easily by stubbing &lt;code&gt;#my_foo_finder&lt;/code&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;FactoryGirl&amp;#39;s &lt;code&gt;#build_stubbed&lt;/code&gt; is what you most likely want, not &lt;code&gt;#build&lt;/code&gt;, and certainly not &lt;code&gt;#create&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Check out &lt;a href=&quot;https://github.com/jimweirich/rspec-given&quot; title=&quot;rspec-given&quot;&gt;rspec-given&lt;/a&gt; for a better testing syntax&lt;/li&gt;
+&lt;li&gt;Each test block should be testing one thing, though you may be making several assertions on it&lt;/li&gt;
+&lt;li&gt;Pick a friend&amp;#39;s brain on how they test. You may not agree with them, or they may not be doing it &lt;em&gt;right&lt;/em&gt;, but get a feel for how other people are doing it&lt;/li&gt;
+&lt;li&gt;Stay out of the browser&lt;/li&gt;
+&lt;li&gt;Stay out of the irb console&lt;/li&gt;
+&lt;li&gt;If you want to see how a method responds, write a failing test so you can see it.. and stay out of the console&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Check out &lt;a href=&quot;https://twitter.com/search?q=%23pairwithme&amp;amp;amp;src=hash&quot; title=&quot;#pairwithme&quot;&gt;#pairwithme&lt;/a&gt; on twitter and &lt;a href=&quot;http://www.pairprogramwith.me&quot;&gt;http://www.pairprogramwith.me&lt;/a&gt; and pair with someone!&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Remembering Steve</title>
+   <link href="http://www.tech-d.net/apple/2011/10/11/remembering-steve/"/>
+   <updated>2011-10-11T16:18:45+00:00</updated>
+   <id>http://www.tech-d.net/apple/2011/10/11/remembering-steve</id>
+   <content type="html">&lt;p&gt;I remember Steve, not personally, or from the gadgets that he helped to create, which I love and use daily.&lt;/p&gt;
+
+&lt;p&gt;I remember Steve as a man who was not afraid to be a leader.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;A man who knew the direction he wanted to go and went there.&lt;/p&gt;
+
+&lt;p&gt;A man who inspired others to go to the places he envisioned.&lt;/p&gt;
+
+&lt;p&gt;A man who inspired those around him to be greater than what they had been.&lt;/p&gt;
+
+&lt;p&gt;A man who inspired people to think beyond the status quo.&lt;/p&gt;
+
+&lt;p&gt;A man who continues to inspires us to greatness even in death.&lt;/p&gt;
+
+&lt;p&gt;A man who followed his heart.&lt;/p&gt;
+
+&lt;p&gt;Steve had a vision and passion for what technology could bring to the average person.&lt;/p&gt;
+
+&lt;p&gt;While he created gadgets and gizmos his drive and methods can be applied anywhere and to all aspects of our lives.&lt;/p&gt;
+
+&lt;p&gt;In that Steve&amp;#39;s spirit will continue to live on.&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+
+&lt;p&gt;I remember Steve.&lt;/p&gt;
+</content>
+ </entry>
+ 
+
+</feed>
