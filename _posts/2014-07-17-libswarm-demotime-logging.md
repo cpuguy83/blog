@@ -45,7 +45,7 @@ Getting logs tcp://10.0.0.2:2375 [agitated_yonath]
 2014-07-17 19:04:23.43114032 +0000 UTC	tcp://10.0.0.2:2375	agitated_yonath	INFO	this is a log message
 ```
 
-[![libswarm-logforwarder-1daemon](/assets/libswarm-logforwarder-1daemon.png)](http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-1daemon.png)
+[![libswarm-logforwarder-1daemon](/assets/libswarm-logforwarder-1daemon.png)](/assets/libswarm-logforwarder-1daemon.png)
 
 So we told swarmd to fire up the logforwarder backend and connect to the docker daemon on tcp://10.0.0.2:2375, attach to each of the containers in the daemon, convert the stdout/stderr streams to log messages and forward them into the stdoutlogger (which is a backend made simply for demo purposes) which prints to the terminal's stdout.
 
@@ -79,6 +79,8 @@ Here we have the logforwarder connecting to 2 docker backends, attaching to each
 
 [![libswarm-logforwarder-2daemons](/assets/libswarm-logforwarder-2daemons.png)](http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-2daemons.png)
 
+)
+
 Instead of `stdoutlogger`, this could be swapped out for syslog, logstash, whatever... it just needs to implement the libswarm `Log` verb.
 
-[![libswarm-logforwarder-syslog](/assets/libswarm-logforwarder-syslog.png)](http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-syslog.png)
+[![libswarm-logforwarder-syslog](/assets/libswarm-logforwarder-syslog.png)](/assets/libswarm-logforwarder-syslog.png)
