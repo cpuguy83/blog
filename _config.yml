@@ -1,11 +1,13 @@
 markdown:         redcarpet
+redcarpet:
+  extensions: ["strikethrough"]
 hilighter:        true
 
 permalink:        pretty
 
-title:            Tech'd
+title:            Container42
 tagline:          Stuff I find interesting
-url:              http://www.tech-d.net
+url:              http://www.container42.com
 paginate:         5
 baseurl:          /
 author:
