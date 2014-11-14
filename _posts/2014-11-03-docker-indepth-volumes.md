@@ -25,7 +25,7 @@ So let's take a closer look at how volumes work in Docker.
 
 First, let's dispell the most common and first misconception:
 
-  Docker volumes are for persistsence.
+  Docker volumes are for persistence.
 
 This likely comes from the idea that container's are not persitant, which is
 indeed not true.  Container's persist until you remove them, and you can only do
