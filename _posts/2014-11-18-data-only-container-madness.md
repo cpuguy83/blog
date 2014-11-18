@@ -167,6 +167,6 @@ In practice, I usually do something like this:
 In the above example, the command the data-only container ends up running is
 `/bin/sh -c '/bin/echo Data-only container for mydb'`.  
 This makes the data-only container relatively easy to grep for, and also gives a
-good clue, based on the command being run in the container, what the contianer
+good clue, based on the command being run in the container, what the container
 is actually for.
 
