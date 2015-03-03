@@ -1,4 +1,4 @@
-FROM ruby:2.1.5
+FROM ruby:2.2
 RUN gem install jekyll therubyracer --no-ri --no-rdoc
 RUN apt-get update && apt-get install -y nginx ca-certificates --no-install-recommends
 ADD . /opt/site

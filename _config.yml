@@ -12,8 +12,10 @@ paginate:         5
 baseurl:          /
 author:
   name:           Brian Goff
-  url:            https://twitter.com/cpuguy83
+  url:            https://www.container42.com
+  twitter:        https://twitter.com/cpuguy83
   email:          cpuguy83@gmail.com
+  github:         https://github.com/cpuguy83
 
 version: 1
 
