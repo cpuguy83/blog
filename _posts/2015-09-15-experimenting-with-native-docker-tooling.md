@@ -19,7 +19,7 @@ author:
 Using Docker over the last two years has been a wonderful experience. It is not
 always perfect. I've certainly had to write new tools (and use other's tools) to
 deal with a missing or not-fully-baked features for my own needs. However, this
-has served to allowed us to focus at the next level of problems administering
+has served to allow us to focus on the next level of problems in administering
 systems, be it for local dev envs, production clusters, and everything in
 between.
 
@@ -33,18 +33,18 @@ The Docker community has been working on new tools and API's to help fill in som
 of those gaps and aleviate some of the headaches with some supporting tooling
 like compose, swarm, and machine, but still these aren't really production ready
 yet nor the integration points completely figured out.
-That is not to say don't use these tools, I use these tools every day. I don't
+That is not to say don't use these tools, I use them every day. I don't
 create a Digital Ocean droplet without doing it through docker-machine, for
 instance.
 
 Thankfully, this is somthing being worked on! I'd like to show you some of it.
 It is still **QUITE** rough around the edges, but I'd expect to see some major
-improvements soon, possibly even for the Docker Engine 1.9 release (October).
+improvements soon, possibly even in time for for the Docker Engine 1.9 release (October).
 Without further ado, let's take a look!
 
 <!--break-->
 
-**Reminder**: This is all experimental and does not reflect the final featureset/API
+**Reminder**: This is all experimental and does not reflect the final feature-set/API
 but is intended to give a small glimpse into what is coming.
 
 There is a tremendous effort to support multi-host networking natively in Docker.
@@ -60,7 +60,7 @@ which is far easier to customize.
 Also, each part of the script would be concatenated with the previous to make
 one complete script.
 
-First, we need a KV store that each docker node needs to be talk to:
+First, we need a KV store that our docker nodes can talk to:
 
 ```bash
 #!/bin/bash
@@ -115,11 +115,12 @@ docker-machine create -d digitalocean \
 This will instruct docker-machine to create a new droplet on Digital Ocean with
 Debian Jessie, use the experimental repos to install docker, and sets up the
 network overlay driver.
-It also the swarm manager and swarm agent (in a container) on this node with the
+It also sets up the swarm manager and swarm agent (in a container) on this node with the
 pre-created cluster key.
-We have to `|| echo > /dev/null` because one, we did `set -e` above, which
+We have to `|| echo > /dev/null` because one, we `set -e` above, which
 instructs bash to exit on error, and two because the engine installation above
-does yield an error even though everything is ok, this is a bug in docker-machine.
+yields an error even though everything is ok... this is a bug in the docker-machine
+provisioner for Debian.
 
 Once this is done we can setup the other two nodes in parallel:
 
