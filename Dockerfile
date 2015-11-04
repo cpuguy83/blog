@@ -1,5 +1,6 @@
 FROM ruby:2.2
-RUN gem install jekyll therubyracer --no-ri --no-rdoc
+RUN gem install therubyracer --no-ri --no-rdoc
+RUN gem install -v "=2.5.3" jekyll
 RUN apt-get update && apt-get install -y nginx ca-certificates --no-install-recommends
 ADD . /opt/site
 WORKDIR /opt/site
