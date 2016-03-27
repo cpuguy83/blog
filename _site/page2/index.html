@@ -11,7 +11,7 @@
 
   <title>
     
-      Tech'd &middot; Stuff I find interesting
+      Container42 &middot; Stuff I find interesting
     
   </title>
 
@@ -51,9 +51,13 @@ ga('send', 'pageview');
       <div class="masthead">
         <div class="container">
           <h3 class="masthead-title">
-            <a href="/" title="Home">Tech'd</a>
+            <a href="/" title="Home">Container42</a>
             <small>Stuff I find interesting</small>
           </h3>
+            <span display="float:right">
+              <a href="https://twitter.com/cpuguy83"><small>Twitter</small></a>
+              <a href="https://github.com/cpuguy83"><small>GitHub</small></a>
+            </span>
         </div>
       </div>
 
@@ -62,88 +66,112 @@ ga('send', 'pageview');
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/2014/02/06/docker-quicktip-3-onbuild/">
-        Docker quicktip #3 - ONBUILD
+      <a href="/2014/11/03/docker-indepth-volumes/">
+        Docker In-depth: Volumes
       </a>
     </h1>
 
-    <span class="post-date">06 Feb 2014</span>
+    <span class="post-date">03 Nov 2014</span>
 
-    <p>Docker 0.8 came out today, with it a slew of fantastic enhancements.  Today we&#39;ll be looking at one of them: <code>ONBUILD</code>.</p>
+    <p>One of the most common roadblocks for people using Docker, and indeed easily the
+most common questions I see on on various Docker support channels, is regarding
+the use of volumes.</p>
+
+<p>So let&#39;s take a closer look at how volumes work in Docker.</p>
 
 
     
-      <a href="/2014/02/06/docker-quicktip-3-onbuild/">read more</a>
+      <a href="/2014/11/03/docker-indepth-volumes/">read more</a>
     
   </div>
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/2014/01/27/docker-quicktip-2-exec-it/">
-        Docker Quicktip #2: exec it, please!
+      <a href="/2014/09/30/docker-restart-policies/">
+        Docker Quicktip #6: Restart Policies
       </a>
     </h1>
 
-    <span class="post-date">27 Jan 2014</span>
+    <span class="post-date">30 Sep 2014</span>
 
-    <p>Often when creating a Docker container it is necessary to do a bit of setup before starting the main process you wanted. Sometimes this is just a one-time setup for the first time the container starts (setting up database users, importing data, etc), other times it&#39;s setting up the environment to get your process going (as many init.d scripts also do). In any case some script is needed to run before running the main application that the container was created for.</p>
+    <p>Docker 1.2 introduced a powerful new feature called &quot;restart policies&quot;.
+Restart policies replaces the old daemon &quot;-r&quot; option, which itself would try to
+restart all previously running containers upon daemon restart, however this was
+rife with trouble.</p>
 
 
     
-      <a href="/2014/01/27/docker-quicktip-2-exec-it/">read more</a>
+      <a href="/2014/09/30/docker-restart-policies/">read more</a>
     
   </div>
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/2014/01/27/docker-quicktip-1-entrypoint/">
-        Docker Quicktip #1: Entrypoint
+      <a href="/2014/08/28/docker-grand-ambassador/">
+        Docker Grand Ambassador
       </a>
     </h1>
 
-    <span class="post-date">27 Jan 2014</span>
+    <span class="post-date">28 Aug 2014</span>
 
-    <p>The first tip is aptly named &quot;Entrypoint&quot;. In this tips I kind of expect that you&#39;ve played around with Docker a bit, probably even have some containers running for your dev environment.  So, in short, if you haven&#39;t played yet, go play and come back!</p>
+    <p>In Docker, when you want two containers to be able to discover each other and
+communicate, you use links... Or at least when you first started you did and
+and then you gave up because links don&#39;t work well right now.</p>
+
+<p>The problem with linking is that links are static. When a container which is
+being linked to is restarted it very likely has a new IP address. Any container
+which is linked to this restarted container will also need to be restarted in
+order to pick up this new IP address. Therefore linked containers can often have
+a cascading effect of needing to restart many containers in order to update
+links.</p>
 
 
     
-      <a href="/2014/01/27/docker-quicktip-1-entrypoint/">read more</a>
+      <a href="/2014/08/28/docker-grand-ambassador/">read more</a>
     
   </div>
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/">
-        Persistent volumes with Docker - Data-only container pattern
+      <a href="/2014/07/31/dockerhub-in-dev-test-workflow/">
+        DockerHub in dev-test Workflow
       </a>
     </h1>
 
-    <span class="post-date">16 Dec 2013</span>
+    <span class="post-date">31 Jul 2014</span>
 
-    <p>Docker has an option to allow specific folders in a container to be mapped to the normal filesystem on the host.  This allows us to have data in the container without making the data part of the Docker image, and without being bound to AUFS.</p>
+    <p>When DockerHub was announced there was a really handy feature added that you may have missed: Webhooks.</p>
 
-<p>There are a couple of issues with using volumes in certain scenarios:</p>
+<p>With DockerHub you can setup a webhook to call out to an external service once a successful push of a particular image is made (this includes completion of automated builds).</p>
+
+<p>This makes for a nice addition to an existing CI/CD workflow.</p>
 
 
     
-      <a href="/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/">read more</a>
+      <a href="/2014/07/31/dockerhub-in-dev-test-workflow/">read more</a>
     
   </div>
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/social/2013/08/11/burn-brighter/">
-        Burn Brighter
+      <a href="/2014/07/17/libswarm-demotime-logging/">
+        libswarm demotime - logging
       </a>
     </h1>
 
-    <span class="post-date">11 Aug 2013</span>
+    <span class="post-date">17 Jul 2014</span>
 
-    <p>Nearly 12 years ago President George W. Bush, standing in the rubble of the World Trade Center, proclaimed on his megaphone that the unspeakable act of terrorism was carried out on the brightest beacon of freedom in the world.</p>
+    <p>If you don&#39;t know what libswarm is take a gander at <a href="http://www.tech-d.net/2014/07/03/libswarm/" title="Libswarm (in a nutshell)">Libswarm in a nutshell</a></p>
+
+<p>Just a quick demo showing off what libswarm can do with logging.</p>
+
+<p>I will be using code from this gist: <a href="https://gist.github.com/cpuguy83/b7c0f42e903bc13c46d6">https://gist.github.com/cpuguy83/b7c0f42e903bc13c46d6</a></p>
+
+<p>Demo time!</p>
 
 
     
-      <a href="/social/2013/08/11/burn-brighter/">read more</a>
+      <a href="/2014/07/17/libswarm-demotime-logging/">read more</a>
     
   </div>
   

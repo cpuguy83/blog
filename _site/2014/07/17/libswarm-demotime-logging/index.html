@@ -11,7 +11,7 @@
 
   <title>
     
-      libswarm demotime - logging &middot; Tech'd
+      libswarm demotime - logging &middot; Container42
     
   </title>
 
@@ -51,9 +51,13 @@ ga('send', 'pageview');
       <div class="masthead">
         <div class="container">
           <h3 class="masthead-title">
-            <a href="/" title="Home">Tech'd</a>
+            <a href="/" title="Home">Container42</a>
             <small>Stuff I find interesting</small>
           </h3>
+            <span display="float:right">
+              <a href="https://twitter.com/cpuguy83"><small>Twitter</small></a>
+              <a href="https://github.com/cpuguy83"><small>GitHub</small></a>
+            </span>
         </div>
       </div>
 
@@ -81,7 +85,7 @@ Getting logs tcp://10.0.0.2:2375 <span class="o">[</span>agitated_yonath<span cl
 
 2014-07-17 19:04:23.43114032 +0000 UTC  tcp://10.0.0.2:2375 agitated_yonath INFO    this is a log message
 </code></pre></div>
-<p><a href="http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-1daemon.png"><img src="/assets/libswarm-logforwarder-1daemon.png" alt="libswarm-logforwarder-1daemon"></a></p>
+<p><a href="/assets/libswarm-logforwarder-1daemon.png"><img src="/assets/libswarm-logforwarder-1daemon.png" alt="libswarm-logforwarder-1daemon"></a></p>
 
 <p>So we told swarmd to fire up the logforwarder backend and connect to the docker daemon on tcp://10.0.0.2:2375, attach to each of the containers in the daemon, convert the stdout/stderr streams to log messages and forward them into the stdoutlogger (which is a backend made simply for demo purposes) which prints to the terminal&#39;s stdout.</p>
 <div class="highlight"><pre><code class="language-text" data-lang="text"># Now lets connect to multiple daemons with multiple containers
@@ -112,9 +116,11 @@ Getting logs tcp://10.0.0.3:2375 [hopeful_babbage]
 
 <p><a href="http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-2daemons.png"><img src="/assets/libswarm-logforwarder-2daemons.png" alt="libswarm-logforwarder-2daemons"></a></p>
 
+<p>)</p>
+
 <p>Instead of <code>stdoutlogger</code>, this could be swapped out for syslog, logstash, whatever... it just needs to implement the libswarm <code>Log</code> verb.</p>
 
-<p><a href="http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-syslog.png"><img src="/assets/libswarm-logforwarder-syslog.png" alt="libswarm-logforwarder-syslog"></a></p>
+<p><a href="/assets/libswarm-logforwarder-syslog.png"><img src="/assets/libswarm-logforwarder-syslog.png" alt="libswarm-logforwarder-syslog"></a></p>
 
 </div>
 
@@ -124,27 +130,27 @@ Getting logs tcp://10.0.0.3:2375 [hopeful_babbage]
     
       <li>
         <h3>
-          <a href="/2014/07/31/dockerhub-in-dev-test-workflow/">
-            DockerHub in dev-test Workflow
-            <small>31 Jul 2014</small>
+          <a href="/2016/03/27/docker-quicktip-6-psformat/">
+            Docker Quicktip #6: docker ps --format
+            <small>27 Mar 2016</small>
           </a>
         </h3>
       </li>
     
       <li>
         <h3>
-          <a href="/2014/07/03/libswarm/">
-            Libswarm (in a nutshell)
-            <small>03 Jul 2014</small>
+          <a href="/2015/10/30/docker-networking-reborn/">
+            Docker Networking: Reborn
+            <small>30 Oct 2015</small>
           </a>
         </h3>
       </li>
     
       <li>
         <h3>
-          <a href="/2014/05/05/docker-quicktip-5-backing-up-volumes/">
-            Docker Quicktip #5: Backing up Volumes
-            <small>05 May 2014</small>
+          <a href="/2015/09/15/experimenting-with-native-docker-tooling/">
+            Experimenting with Native Docker tooling
+            <small>15 Sep 2015</small>
           </a>
         </h3>
       </li>

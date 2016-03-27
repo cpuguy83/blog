@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
- <title>Tech'd</title>
- <link href="http://www.tech-d.net/atom.xml" rel="self"/>
- <link href="http://www.tech-d.net/"/>
- <updated>2014-08-23T03:12:06+00:00</updated>
- <id>http://www.tech-d.net</id>
+ <title>Container42</title>
+ <link href="http://www.container42.com/atom.xml" rel="self"/>
+ <link href="http://www.container42.com/"/>
+ <updated>2016-03-27T17:12:31+00:00</updated>
+ <id>http://www.container42.com</id>
  <author>
    <name>Brian Goff</name>
    <email>cpuguy83@gmail.com</email>
@@ -13,10 +13,1229 @@
 
  
  <entry>
+   <title>Docker Quicktip #6: docker ps --format</title>
+   <link href="http://www.container42.com/2016/03/27/docker-quicktip-6-psformat/"/>
+   <updated>2016-03-27T12:00:00+00:00</updated>
+   <id>http://www.container42.com/2016/03/27/docker-quicktip-6-psformat</id>
+   <content type="html">&lt;p&gt;It&amp;#39;s been awhile since I did a quick Docker tip, so I figured I should go ahead
+and share one that I know many people will get use out of.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;&lt;code&gt;docker ps&lt;/code&gt; is a command that absolutely every Docker user uses. When you type it
+in you probably, invariably, stretch out your terminal to fit all the super
+important information that the command has.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker ps
+CONTAINER ID        IMAGE                          COMMAND                  CREATED             STATUS              PORTS                                       NAMES
+9112d2b6aa30        cpuguy83/configs:hipache       &amp;quot;/usr/local/bin/hipac&amp;quot;   4 months ago        Up 3 days           0.0.0.0:80-&amp;gt;80/tcp, 0.0.0.0:443-&amp;gt;443/tcp    prod_hipache_1
+849694c39d5b        redis                          &amp;quot;/entrypoint.sh redis&amp;quot;   4 months ago        Up 3 days           6379/tcp                                    prod_hipacheredis_1
+a8c4a95147f7        cpuguy83/blog                  &amp;quot;nginx&amp;quot;                  4 months ago        Up 3 days           80/tcp                                      prod_blogwww_1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This information is all indeed nice to have, but probably not all of it all the
+time. Also probably different people want to see different information. This is
+why &lt;code&gt;docker ps --format ...&lt;/code&gt; was introduced.&lt;/p&gt;
+
+&lt;p&gt;Now, you might think &amp;quot;I&amp;#39;ve seen this, I don&amp;#39;t need to see more&amp;quot;... and you might
+be right, however stick around and you&amp;#39;ll probably find something you didn&amp;#39;t know
+about that will blow your mind.&lt;/p&gt;
+
+&lt;p&gt;For those not in the know, many Docker commands use a &lt;code&gt;--format&lt;/code&gt; flag which takes
+a &lt;a href=&quot;https://golang.org/pkg/text/template/&quot;&gt;go-template&lt;/a&gt; to customize the output of
+the command. &lt;code&gt;docker inspect&lt;/code&gt; has had this formatting forever... &lt;code&gt;docker ps&lt;/code&gt;
+gained this capability in docker 1.8. A quick example:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker ps --format &amp;#39;{{.Names}}\t{{.Image}}&amp;#39;
+
+prod_hipache_1  cpuguy83/configs:hipache
+prod_hipacheredis_1 redis
+prod_blogwww_1  cpuguy83/blog
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Not very pretty, but at least it&amp;#39;s more awk/greppable.
+To make it pretty, we can add &lt;code&gt;table&lt;/code&gt; to the beginning of the template.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker ps --format &amp;#39;table {{.Names}}\t{{.Image}}&amp;#39;
+
+NAMES                   IMAGE
+prod_hipache_1          cpuguy83/configs:hipache
+prod_hipacheredis_1     redis
+prod_blogwww_1          cpuguy83/blog
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So that&amp;#39;s nice... but what if I told you that you can set a default format so you
+don&amp;#39;t have to type the same thing in every time, nor have to constantly resize
+your terminal, while still being able to override the format from the CLI?&lt;/p&gt;
+
+&lt;p&gt;By default, Docker looks for a config file in &lt;code&gt;~/.docker/config.json&lt;/code&gt;. It stores
+some settings here, like auth credentials (which in Docker 1.11 you you&amp;#39;ll be
+able to move auth creds elsewhere... more on that in a later post). It can also
+store a custom format for &lt;code&gt;docker ps&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;If you&amp;#39;ve typed &lt;code&gt;docker login&lt;/code&gt; before you should have this config file there and
+populated with a json hash, we can just add the &lt;code&gt;docker ps&lt;/code&gt; format configuration
+as a top-level item in the hash... here&amp;#39;s the configuration that I use:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;quot;psFormat&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;table {{.Names}}\\t{{.Image}}\\t{{.RunningFor}} ago\\t{{.Status}}\\t{{.Command}}&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Which looks like this:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker ps
+NAMES                   IMAGE                          CREATED             STATUS              COMMAND
+prod_hipache_1          cpuguy83/configs:hipache       4 months ago        Up 3 days           &amp;quot;/usr/local/bin/hipac&amp;quot;
+prod_hipacheredis_1     redis                          4 months ago        Up 3 days           &amp;quot;/entrypoint.sh redis&amp;quot;
+prod_blogwww_1          cpuguy83/blog                  4 months ago        Up 3 days           &amp;quot;nginx&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;You can also do the same for &lt;code&gt;docker iamges&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;quot;psFormat&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;table {{.Names}}\\t{{.Image}}\\t{{.RunningFor}} ago\\t{{.Status}}\\t{{.Command}}&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;quot;imagesFormat&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;table {{.Repository}}\\t{{.Tag}}\\t{{.ID}}\\t{{.Size}}&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/docker/docker/blob/master/docs/admin/formatting.md&quot;&gt;Read more&lt;/a&gt;
+for more docs on formatting options for different commands.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Docker Networking: Reborn</title>
+   <link href="http://www.container42.com/2015/10/30/docker-networking-reborn/"/>
+   <updated>2015-10-30T16:00:00+00:00</updated>
+   <id>http://www.container42.com/2015/10/30/docker-networking-reborn</id>
+   <content type="html">&lt;p&gt;Forget everything you thought knew about Docker networking. It&amp;#39;s all changed,
+brand new and shiney, and yet oddly familiar.
+Docker 1.9 is coming and it will change the way you do container networking.&lt;/p&gt;
+
+&lt;p&gt;You may have seen some
+&lt;a href=&quot;/2015/09/15/experimenting-with-native-docker-tooling/&quot;&gt;experiements&lt;/a&gt; now I&amp;#39;ll
+show you the real deal.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;Docker 1.9 includes for the first time the concept of the
+&amp;quot;Container Network Model&amp;quot;. Read more on
+&lt;a href=&quot;https://blog.docker.com/2015/04/docker-networking-takes-a-step-in-the-right-direction-2/&quot;&gt;CNM&lt;/a&gt;.
+Basically, CNM is about creating small, micro-segmented networks for groups of
+containers to communicate over.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://blog.docker.com/media/2015/04/cnm-model.jpg&quot; alt=&quot;Container Network Model&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;These networks are highly configurable, and yet easy to setup using just the
+defaults.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker network create frontend
+a639a457122020faa69a4ab906bc33217c9c6d73048f3dbbb69e53dbe5e0952c
+$ docker run -d --name rose --net=frontend busybox top
+c1fa2dc7fa3a412b52b53f5facd25ba11e99c362d77be8cea4ff49f3d5e2cafc
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And there, we have a container running on the &lt;code&gt;frontend&lt;/code&gt; network.
+Let&amp;#39;s talk to it.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker run --rm --net=frontend busybox ping -c 4 rose
+PING rose (172.19.0.2): 56 data bytes
+64 bytes from 172.19.0.2: seq=0 ttl=64 time=0.122 ms
+64 bytes from 172.19.0.2: seq=1 ttl=64 time=0.078 ms
+64 bytes from 172.19.0.2: seq=2 ttl=64 time=0.098 ms
+64 bytes from 172.19.0.2: seq=3 ttl=64 time=0.241 ms
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So we attached a 2nd container to the &lt;code&gt;frontend&lt;/code&gt; network and used the built-in
+discovery to reach the container named &lt;code&gt;rose&lt;/code&gt; via ping.
+Now let&amp;#39;s take a look at the network details:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker network inspect frontend
+[
+    {
+        &amp;quot;Name&amp;quot;: &amp;quot;frontend&amp;quot;,
+        &amp;quot;Id&amp;quot;: &amp;quot;a639a457122020faa69a4ab906bc33217c9c6d73048f3dbbb69e53dbe5e0952c&amp;quot;,
+        &amp;quot;Scope&amp;quot;: &amp;quot;local&amp;quot;,
+        &amp;quot;Driver&amp;quot;: &amp;quot;bridge&amp;quot;,
+        &amp;quot;IPAM&amp;quot;: {
+            &amp;quot;Driver&amp;quot;: &amp;quot;default&amp;quot;,
+            &amp;quot;Config&amp;quot;: [
+                {}
+            ]
+        },
+        &amp;quot;Containers&amp;quot;: {
+            &amp;quot;c1fa2dc7fa3a412b52b53f5facd25ba11e99c362d77be8cea4ff49f3d5e2cafc&amp;quot;: {
+                &amp;quot;EndpointID&amp;quot;: &amp;quot;976bab21d4a11cd21d5d1c1560f67f39ef15245662aeacf097eb1d5c148ed748&amp;quot;,
+                &amp;quot;MacAddress&amp;quot;: &amp;quot;02:42:ac:13:00:02&amp;quot;,
+                &amp;quot;IPv4Address&amp;quot;: &amp;quot;172.19.0.2/16&amp;quot;,
+                &amp;quot;IPv6Address&amp;quot;: &amp;quot;&amp;quot;
+            }
+        },
+        &amp;quot;Options&amp;quot;: {}
+    }
+]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Like the familiar command &lt;code&gt;docker inspect&lt;/code&gt;, &lt;code&gt;docker network inspect&lt;/code&gt; provides
+low-level details about the network, including attached containers.&lt;/p&gt;
+
+&lt;p&gt;There is a lot that you can customize when creating a network, here&amp;#39;s what is
+currently available:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;  --aux-address=map[]      auxiliary ipv4 or ipv6 addresses used by Network driver
+  -d, --driver=&amp;quot;bridge&amp;quot;    Driver to manage the Network
+  --gateway=[]             ipv4 or ipv6 Gateway for the master subnet
+  --help=false             Print usage
+  --ip-range=[]            allocate container ip from a sub-range
+  --ipam-driver=default    IP Address Management Driver
+  -o, --opt=map[]          set driver specific options
+  --subnet=[]              subnet in CIDR format that represents a network segment
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Let&amp;#39;s talk about the &amp;quot;--driver&amp;quot; option. This option lets you specify the driver
+which is responsible for managing the network. Docker ships with 2 drivers:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;bridge -- This driver provides the same sort of networking via veth bridge
+devices that prior versions of docker use, it is the default.&lt;/li&gt;
+&lt;li&gt;overlay -- Not to be confused with the &amp;quot;overlay&amp;quot; storage driver (thanks overlayfs),
+this driver provides native multi-host networking for docker clusters. When using
+swarm, this is the default driver.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Other drivers can be used via plugins.&lt;/p&gt;
+
+&lt;p&gt;There is also &lt;code&gt;--ipam-driver&lt;/code&gt;, which allows you to customize how IP addresses are
+assigned. The only driver included with Docker is the same/equivelant of what it
+has always done.
+However, I should note as I know a lot of people want DHCP support, there are a
+number of people working on a DHCP IPAM driver.&lt;/p&gt;
+
+&lt;p&gt;Back to setting things up...
+Let&amp;#39;s create a new network and attach our container to it. Yes, let&amp;#39;s add a
+2nd network to the running container.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker network create backend
+09733cac7890edca439cdc3d476b4cd1959e44065217aa581d359575b8d2288f
+$ docker network connect backend rose
+$ docker network inspect backend
+
+    {
+        &amp;quot;name&amp;quot;: &amp;quot;backend&amp;quot;,
+        &amp;quot;id&amp;quot;: &amp;quot;09733cac7890edca439cdc3d476b4cd1959e44065217aa581d359575b8d2288f&amp;quot;,
+        &amp;quot;scope&amp;quot;: &amp;quot;local&amp;quot;,
+        &amp;quot;driver&amp;quot;: &amp;quot;bridge&amp;quot;,
+        &amp;quot;ipam&amp;quot;: {
+            &amp;quot;driver&amp;quot;: &amp;quot;default&amp;quot;,
+            &amp;quot;config&amp;quot;: [
+                {}
+            ]
+        },
+        &amp;quot;containers&amp;quot;: {
+            &amp;quot;c1fa2dc7fa3a412b52b53f5facd25ba11e99c362d77be8cea4ff49f3d5e2cafc&amp;quot;: {
+                &amp;quot;endpoint&amp;quot;: &amp;quot;438730c588915dd54dc694efdb3a15c77bc5e86c744f5f87a65f6ac46b43e5ad&amp;quot;,
+                &amp;quot;mac_address&amp;quot;: &amp;quot;02:42:ac:14:00:02&amp;quot;,
+                &amp;quot;ipv4_address&amp;quot;: &amp;quot;172.20.0.2/16&amp;quot;,
+                &amp;quot;ipv6_address&amp;quot;: &amp;quot;&amp;quot;
+            }
+        },
+        &amp;quot;options&amp;quot;: {}
+    }
+]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Cool, now let&amp;#39;s check the container&amp;#39;s network settings.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker inspect -f &amp;#39;{{ json .NetworkSettings }}&amp;#39; rose
+{
+  &amp;quot;Bridge&amp;quot;: &amp;quot;&amp;quot;,
+  &amp;quot;SandboxID&amp;quot;: &amp;quot;b600bebe1e2bb6dee92335e6acfe49215c30c4964d7a982711ec12c6acca3309&amp;quot;,
+  &amp;quot;HairpinMode&amp;quot;: false,
+  &amp;quot;LinkLocalIPv6Address&amp;quot;: &amp;quot;&amp;quot;,
+  &amp;quot;LinkLocalIPv6PrefixLen&amp;quot;: 0,
+  &amp;quot;Ports&amp;quot;: {},
+  &amp;quot;SandboxKey&amp;quot;: &amp;quot;/var/run/docker/netns/b600bebe1e2b&amp;quot;,
+  &amp;quot;SecondaryIPAddresses&amp;quot;: null,
+  &amp;quot;SecondaryIPv6Addresses&amp;quot;: null,
+  &amp;quot;EndpointID&amp;quot;: &amp;quot;&amp;quot;,
+  &amp;quot;Gateway&amp;quot;: &amp;quot;&amp;quot;,
+  &amp;quot;GlobalIPv6Address&amp;quot;: &amp;quot;&amp;quot;,
+  &amp;quot;GlobalIPv6PrefixLen&amp;quot;: 0,
+  &amp;quot;IPAddress&amp;quot;: &amp;quot;&amp;quot;,
+  &amp;quot;IPPrefixLen&amp;quot;: 0,
+  &amp;quot;IPv6Gateway&amp;quot;: &amp;quot;&amp;quot;,
+  &amp;quot;MacAddress&amp;quot;: &amp;quot;&amp;quot;,
+  &amp;quot;Networks&amp;quot;: {
+    &amp;quot;backend&amp;quot;: {
+      &amp;quot;EndpointID&amp;quot;: &amp;quot;438730c588915dd54dc694efdb3a15c77bc5e86c744f5f87a65f6ac46b43e5ad&amp;quot;,
+      &amp;quot;Gateway&amp;quot;: &amp;quot;172.20.0.1&amp;quot;,
+      &amp;quot;IPAddress&amp;quot;: &amp;quot;172.20.0.2&amp;quot;,
+      &amp;quot;IPPrefixLen&amp;quot;: 16,
+      &amp;quot;IPv6Gateway&amp;quot;: &amp;quot;&amp;quot;,
+      &amp;quot;GlobalIPv6Address&amp;quot;: &amp;quot;&amp;quot;,
+      &amp;quot;GlobalIPv6PrefixLen&amp;quot;: 0,
+      &amp;quot;MacAddress&amp;quot;: &amp;quot;02:42:ac:14:00:02&amp;quot;
+    },
+    &amp;quot;frontend&amp;quot;: {
+      &amp;quot;EndpointID&amp;quot;: &amp;quot;976bab21d4a11cd21d5d1c1560f67f39ef15245662aeacf097eb1d5c148ed748&amp;quot;,
+      &amp;quot;Gateway&amp;quot;: &amp;quot;172.19.0.1&amp;quot;,
+      &amp;quot;IPAddress&amp;quot;: &amp;quot;172.19.0.2&amp;quot;,
+      &amp;quot;IPPrefixLen&amp;quot;: 16,
+      &amp;quot;IPv6Gateway&amp;quot;: &amp;quot;&amp;quot;,
+      &amp;quot;GlobalIPv6Address&amp;quot;: &amp;quot;&amp;quot;,
+      &amp;quot;GlobalIPv6PrefixLen&amp;quot;: 0,
+      &amp;quot;MacAddress&amp;quot;: &amp;quot;02:42:ac:13:00:02&amp;quot;
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Cool, so what&amp;#39;s this look like inside the container?&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker exec rose ifconifg
+eth0      Link encap:Ethernet  HWaddr 02:42:AC:13:00:02
+          inet addr:172.19.0.2  Bcast:0.0.0.0  Mask:255.255.0.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:27 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:16 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:2238 (2.1 KiB)  TX bytes:1208 (1.1 KiB)
+
+eth1      Link encap:Ethernet  HWaddr 02:42:AC:14:00:02
+          inet addr:172.20.0.2  Bcast:0.0.0.0  Mask:255.255.0.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:16 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:8 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:1296 (1.2 KiB)  TX bytes:648 (648.0 B)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Just like I connected it to a network, I can also disconnect, and the corrosponding
+interface, will be removed.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker network disconnect backend rose
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The intention of these networks is to segregate services such that the only things
+on a network are things that need to talk to each other. This means in practice
+you should have lots of networks with small amounts of containers in them.
+Networks are all isolated from each other.
+If two containers are not on the same network, they cannot talk.&lt;/p&gt;
+
+&lt;p&gt;A typical example would be a load balancer, a web app front end, a web app
+backend, and a database.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;/assets/cnm-demo.png&quot;&gt;&lt;img src=&quot;/assets/cnm-demo.png&quot; alt=&quot;cnm-demo&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;In Swarm the default network driver is the overlay driver (when creating networks).
+This allows containers on separate hosts to be able to communicate with each other
+just as you would expect them to on the same host.
+This driver uses VxLAN to encapsulate traffic, and requires kernels &amp;gt;= 3.16.&lt;/p&gt;
+
+&lt;p&gt;To provide this ability, you must supply Docker with a K/V store so Docker engines
+can discover each other, this is provided as a daemon flag.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker daemon --help | grep cluster
+  --cluster-advertise=                 Address or interface name to advertise
+  --cluster-store=                     Set the cluster store
+  --cluster-store-opt=map[]            Set cluster store options
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;That is all you need to setup multi-host networking in Docker. In fact it&amp;#39;s
+extremely easy to setup and configure a docker cluster with this functionality
+ready to go. Try it out for yourself:&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;This script requires docker-machine&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/sh&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;set&lt;/span&gt; -e
+
+create&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;Setting up kv store
+  docker-machine create -d virtualbox kvstore &amp;gt; /dev/null &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  docker &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker-machine config kvstore&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; run -d --net&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;host progrium/consul --server -bootstrap-expect 1
+
+  &lt;span class=&quot;c&quot;&gt;# store the IP address of the kvstore machine&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;kvip&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker-machine ip kvstore&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+
+  &lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;Creating cluster nodes
+  docker-machine create -d virtualbox &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --engine-opt &lt;span class=&quot;s2&quot;&gt;&amp;quot;cluster-store consul://${kvip}:8500&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --engine-opt &lt;span class=&quot;s2&quot;&gt;&amp;quot;cluster-advertise eth1:2376&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --virtualbox-boot2docker-url https://github.com/boot2docker/boot2docker/releases/download/v1.9.0/boot2docker.iso &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --swarm &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --swarm-master &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --swarm-image swarm:1.0.0 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --swarm-discovery consul://&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;kvip&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;:8500 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    swarm-demo-1 &amp;gt; /dev/null &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; i in &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; 3&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+    docker-machine create -d virtualbox &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      --engine-opt &lt;span class=&quot;s2&quot;&gt;&amp;quot;cluster-store consul://${kvip}:8500&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      --engine-opt &lt;span class=&quot;s2&quot;&gt;&amp;quot;cluster-advertise eth1:2376&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      --swarm &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      --swarm-discovery consul://&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;kvip&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;:8500 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      --virtualbox-boot2docker-url https://github.com/boot2docker/boot2docker/releases/download/v1.9.0/boot2docker.iso &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      swarm-demo-&lt;span class=&quot;nv&quot;&gt;$i&lt;/span&gt; &amp;gt; /dev/null &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;wait&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+teardown&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  docker-machine rm kvstore &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; i in &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; 3&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+    docker-machine rm -f swarm-demo-&lt;span class=&quot;nv&quot;&gt;$i&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;wait&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$1&lt;/span&gt; in
+  up&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    create
+    &lt;span class=&quot;p&quot;&gt;;;&lt;/span&gt;
+  down&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    teardown
+    &lt;span class=&quot;p&quot;&gt;;;&lt;/span&gt;
+  *&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;I literally can&amp;#39;t even...&amp;quot;&lt;/span&gt;
+    &lt;span class=&quot;nb&quot;&gt;exit &lt;/span&gt;1
+    &lt;span class=&quot;p&quot;&gt;;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;esac&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We can run the script and instantly have a 3-node cluster with multi-host networking
+ready to go.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ ./swarminate up
+&amp;lt;!-- output truncated --&amp;gt;
+# load the config for the swarm master into the env
+$ eval $(docker-machine env --swarm swarm-demo-1)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now we can verify we are talking to a swarm cluster&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker info
+Containers: 4
+Images: 3
+Role: primary
+Strategy: spread
+Filters: health, port, dependency, affinity, constraint
+Nodes: 3
+ swarm-demo-1: 192.168.99.139:2376
+  └ Containers: 2
+  └ Reserved CPUs: 0 / 1
+  └ Reserved Memory: 0 B / 1.021 GiB
+  └ Labels: executiondriver=native-0.2, kernelversion=4.1.12-boot2docker, operatingsystem=Boot2Docker 1.9.0-rc4 (TCL 6.4); master : 4fab4a2 - Sat Oct 31 17:00:18 UTC 2015, provider=virtualbox, storagedriver=aufs
+ swarm-demo-2: 192.168.99.137:2376
+  └ Containers: 1
+  └ Reserved CPUs: 0 / 1
+  └ Reserved Memory: 0 B / 1.021 GiB
+  └ Labels: executiondriver=native-0.2, kernelversion=4.1.12-boot2docker, operatingsystem=Boot2Docker 1.9.0-rc4 (TCL 6.4); master : 4fab4a2 - Sat Oct 31 17:00:18 UTC 2015, provider=virtualbox, storagedriver=aufs
+ swarm-demo-3: 192.168.99.138:2376
+  └ Containers: 1
+  └ Reserved CPUs: 0 / 1
+  └ Reserved Memory: 0 B / 1.021 GiB
+  └ Labels: executiondriver=native-0.2, kernelversion=4.1.12-boot2docker, operatingsystem=Boot2Docker 1.9.0-rc4 (TCL 6.4); master : 4fab4a2 - Sat Oct 31 17:00:18 UTC 2015, provider=virtualbox, storagedriver=aufs
+CPUs: 3
+Total Memory: 3.064 GiB
+Name: 0a49f1e5d537
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now lets setup an overlay network:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker network create multi # The overlay driver is default on swarm
+5580acd70dd89d58cecd16df769ace923c91226ce9d6e22828ec83efd8a25c46
+$ docker network inspect multi
+[
+    {
+        &amp;quot;Name&amp;quot;: &amp;quot;multi&amp;quot;,
+        &amp;quot;Id&amp;quot;: &amp;quot;5580acd70dd89d58cecd16df769ace923c91226ce9d6e22828ec83efd8a25c46&amp;quot;,
+        &amp;quot;Scope&amp;quot;: &amp;quot;global&amp;quot;,
+        &amp;quot;Driver&amp;quot;: &amp;quot;overlay&amp;quot;,
+        &amp;quot;IPAM&amp;quot;: {
+            &amp;quot;Driver&amp;quot;: &amp;quot;default&amp;quot;,
+            &amp;quot;Config&amp;quot;: [
+                {}
+            ]
+        },
+        &amp;quot;Containers&amp;quot;: {},
+        &amp;quot;Options&amp;quot;: {}
+    }
+]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Let&amp;#39;s get some containers running, we&amp;#39;ll use swarm constraints to make sure
+containers are fired up on separate nodes for this demo. Now, we don&amp;#39;t have to use
+swarm here, these docker engines will allow containers to communicate without swarm,
+but for simplicity in demoing I will use swarm to schedule/aggregate the containers.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Note that container names on a multi-host network must be globally unique across
+each engine connected to this network&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker run -d --name demo1 --net=multi -e constraint:node==swarm-demo-1 busybox top
+eaf4bc7e2f99fd3b82e7647ec449cd515cc1d53dffe3a037fa877121ce6f6508
+$ docker run -d --name demo2 --net=multi -e constraint:node==swarm-demo-2 busybox top
+d6c7897e92626519ec143f9c464759493249a75730301d226f385f177f4fe507
+$ docker run -d --name demo3 --net=multi -e constraint:node==swarm-demo-3 busybox top
+92615d47c901197b9d24c83b31a8be1a8909353895bf9623e5b5508187d1cf05
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+92615d47c901        busybox             &amp;quot;top&amp;quot;               6 minutes ago       Up 6 minutes                            swarm-demo-3/demo3
+d6c7897e9262        busybox             &amp;quot;top&amp;quot;               7 minutes ago       Up 7 minutes                            swarm-demo-2/demo2
+eaf4bc7e2f99        busybox             &amp;quot;top&amp;quot;               8 minutes ago       Up 8 minutes                            swarm-demo-1/demo1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now we have all 3 containers running, each on separate nodes, all connected to
+the network named &amp;quot;multi&amp;quot;.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ docker exec demo1 sh -c &amp;#39;ping -c 1 demo2; ping -c 1 demo3&amp;#39;
+PING demo2 (10.0.1.3): 56 data bytes
+64 bytes from 10.0.1.3: seq=0 ttl=64 time=0.549 ms
+
+--- demo2 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max = 0.549/0.549/0.549 ms
+PING demo3 (10.0.1.4): 56 data bytes
+64 bytes from 10.0.1.4: seq=0 ttl=64 time=0.398 ms
+
+--- demo3 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max = 0.398/0.398/0.398 ms
+$
+$ docker exec demo2 sh -c &amp;#39;ping -c 1 demo1; ping -c 1 demo3&amp;#39;
+PING demo1 (10.0.1.2): 56 data bytes
+64 bytes from 10.0.1.2: seq=0 ttl=64 time=0.643 ms
+
+--- demo1 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max = 0.643/0.643/0.643 ms
+PING demo3 (10.0.1.4): 56 data bytes
+64 bytes from 10.0.1.4: seq=0 ttl=64 time=0.690 ms
+
+--- demo3 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max = 0.690/0.690/0.690 ms
+$
+$ docker exec demo3 sh -c &amp;#39;ping -c 1 demo1; ping -c 1 demo2&amp;#39;
+PING demo1 (10.0.1.2): 56 data bytes
+64 bytes from 10.0.1.2: seq=0 ttl=64 time=7.559 ms
+
+--- demo1 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max = 7.559/7.559/7.559 ms
+PING demo2 (10.0.1.3): 56 data bytes
+64 bytes from 10.0.1.3: seq=0 ttl=64 time=0.407 ms
+
+--- demo2 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max = 0.407/0.407/0.407 ms
+$
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Just like with the bridge networks, you shold use these overlay networks with
+small groups of containers that actually need to communicate with each other.&lt;/p&gt;
+
+&lt;p&gt;The network endpoints for overlay networks are not currently secured, so you
+should make sure that the channel being overlayed is secured.&lt;br&gt;
+In the future, probably Docker 1.10, these endpoints will be optionally secured.&lt;/p&gt;
+
+&lt;p&gt;Containers can be part of as many networks as needed. They can be part of local
+bridge networks and overlay networks at the samme time. You can use external
+plugins to provide other networking options, such as macvlan, ipvlan, weave, etc.&lt;/p&gt;
+
+&lt;p&gt;When you are done playing with the cluster above, you can clean it all up like so:
+&lt;code&gt;
+$ ./swarminate down
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;When using the new networking features, the &lt;code&gt;links&lt;/code&gt; feature is no longer available.
+The intention here is to use the built-in service discovery rather than links.
+The one thing missing here is being able to alias a container&amp;#39;s name like you can
+do with links, e.g. &lt;code&gt;--link mydb:db&lt;/code&gt;. This is coming.&lt;br&gt;
+Likewise, the &lt;code&gt;--icc=false&lt;/code&gt; option does not apply to the new networking features,
+instead you should segregate containers by network, as containers that don&amp;#39;t share
+a network cannot communicate.
+Both of these features are still available on the default bridge network, so you
+can continue to use them if you prefer.&lt;/p&gt;
+
+&lt;p&gt;The new networking features in Docker 1.9 are a major step forward, and there is
+still more to come!  &lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Experimenting with Native Docker tooling</title>
+   <link href="http://www.container42.com/2015/09/15/experimenting-with-native-docker-tooling/"/>
+   <updated>2015-09-15T12:00:00+00:00</updated>
+   <id>http://www.container42.com/2015/09/15/experimenting-with-native-docker-tooling</id>
+   <content type="html">&lt;p&gt;Using Docker over the last two years has been a wonderful experience. It is not
+always perfect. I&amp;#39;ve certainly had to write new tools (and use other&amp;#39;s tools) to
+deal with a missing or not-fully-baked features for my own needs. However, this
+has served to allow us to focus on the next level of problems in administering
+systems, be it for local dev envs, production clusters, and everything in
+between.&lt;/p&gt;
+
+&lt;p&gt;Very often when talking to other developers they all agree they like the Docker
+model, but the path from a simple dev env to a proudction cluster (even a small one)
+is unclear.
+Indeed, I tend to agree, there has not been a simple way to set this up without
+rolling your own tooling (which I&amp;#39;ve done a lot of).&lt;/p&gt;
+
+&lt;p&gt;The Docker community has been working on new tools and API&amp;#39;s to help fill in some
+of those gaps and aleviate some of the headaches with some supporting tooling
+like compose, swarm, and machine, but still these aren&amp;#39;t really production ready
+yet nor the integration points completely figured out.
+That is not to say don&amp;#39;t use these tools, I use them every day. I don&amp;#39;t
+create a Digital Ocean droplet without doing it through docker-machine, for
+instance.&lt;/p&gt;
+
+&lt;p&gt;Thankfully, this is somthing being worked on! I&amp;#39;d like to show you some of it.
+It is still &lt;strong&gt;QUITE&lt;/strong&gt; rough around the edges, but I&amp;#39;d expect to see some major
+improvements soon, possibly even in time for for the Docker Engine 1.9 release (October).
+Without further ado, let&amp;#39;s take a look!&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;&lt;strong&gt;Reminder&lt;/strong&gt;: This is all experimental and does not reflect the final feature-set/API
+but is intended to give a small glimpse into what is coming.&lt;/p&gt;
+
+&lt;p&gt;There is a tremendous effort to support multi-host networking natively in Docker.
+This follows the whole &amp;quot;batteries included but swappable&amp;quot; mantra, and in this
+case the included batteries is support for vxlan overlay networks with support
+for plugins via &lt;a href=&quot;https://github.com/docker/libnetwork&quot;&gt;libnetwork&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Let&amp;#39;s setup a cluster!&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: As it turns out, it&amp;#39;s quite difficult to test out the experimental
+Docker Engine build with boot2docker, so I&amp;#39;m going to use Digital Ocean + Debian
+which is far easier to customize.
+Also, each part of the script would be concatenated with the previous to make
+one complete script.&lt;/p&gt;
+
+&lt;p&gt;First, we need a KV store that our docker nodes can talk to:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/bash&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt; -z &lt;span class=&quot;nv&quot;&gt;$DIGITALOCEAN_ACCESS_TOKEN&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;then&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Enter your digital ocean API key:&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;read&lt;/span&gt; -s DIGITALOCEAN_ACCESS_TOKEN
+&lt;span class=&quot;k&quot;&gt;fi&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;DIGITALOCEAN_ACCESS_TOKEN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$DIGITALOCEAN_ACCESS_TOKEN&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;set&lt;/span&gt; -e
+
+&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;setting up kv store
+docker-machine create -d digitalocean kvstore &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;nb&quot;&gt;eval&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker-machine env kvstore&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+    docker run -d --net&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;host progrium/consul --server -bootstrap-expect 1
+&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# store the IP address of the kvstore machine&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;kvip&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker-machine ip kvstore&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now let&amp;#39;s get a swarm token to setup the cluster, and setup the first node.
+Normally I would prefer to setup all nodes in parallel, however since the
+discovery portion of the multi-host networking isn&amp;#39;t fully integrated we need to
+know the IP address of the 1st node (or really any node) to give to the subsequent
+nodes for serf.&lt;/p&gt;
+
+&lt;p&gt;The vxlan/overlay network driver requires at least kernel 3.16, so we need to
+specify debian 8 instead of the default ubuntu setup.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# create a cluster id&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;swarm_token&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker-machine config kvstore&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; run --rm swarm create&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;nv&quot;&gt;install_url&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;https://experimental.docker.com
+
+&lt;span class=&quot;c&quot;&gt;# Create node 1&lt;/span&gt;
+docker-machine create -d digitalocean &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --swarm &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --swarm-master &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --swarm-discovery token://&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;swarm_token&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-label &lt;span class=&quot;s2&quot;&gt;&amp;quot;com.docker.network.driver.overlay.bind_interface=eth0&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-opt &lt;span class=&quot;s2&quot;&gt;&amp;quot;default-network overlay:multihost&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-opt &lt;span class=&quot;s2&quot;&gt;&amp;quot;kv-store consul:${kvip}:8500&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-install-url &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;install_url&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --digitalocean-image &lt;span class=&quot;s2&quot;&gt;&amp;quot;debian-8-x64&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  swarm-demo-1 &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &amp;gt; /dev/null
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This will instruct docker-machine to create a new droplet on Digital Ocean with
+Debian Jessie, use the experimental repos to install docker, and sets up the
+network overlay driver.
+It also sets up the swarm manager and swarm agent (in a container) on this node with the
+pre-created cluster key.
+We have to &lt;code&gt;|| echo &amp;gt; /dev/null&lt;/code&gt; because one, we &lt;code&gt;set -e&lt;/code&gt; above, which
+instructs bash to exit on error, and two because the engine installation above
+yields an error even though everything is ok... this is a bug in the docker-machine
+provisioner for Debian.&lt;/p&gt;
+
+&lt;p&gt;Once this is done we can setup the other two nodes in parallel:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker-machine create -d digitalocean &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-label &lt;span class=&quot;s2&quot;&gt;&amp;quot;com.docker.network.driver.overlay.bind_interface=eth0&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-label&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;com.docker.network.driver.overlay.neighbor_ip=$(docker-machine ip swarm-demo-1)&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-opt &lt;span class=&quot;s2&quot;&gt;&amp;quot;default-network overlay:multihost&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-opt &lt;span class=&quot;s2&quot;&gt;&amp;quot;kv-store consul:${kvip}:8500&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-install-url &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;install_url&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --digitalocean-image &lt;span class=&quot;s2&quot;&gt;&amp;quot;debian-8-x64&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  swarm-demo-2 &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;
+
+docker-machine create -d digitalocean &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-label &lt;span class=&quot;s2&quot;&gt;&amp;quot;com.docker.network.driver.overlay.bind_interface=eth0&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-label&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;com.docker.network.driver.overlay.neighbor_ip=$(docker-machine ip swarm-demo-1)&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-opt &lt;span class=&quot;s2&quot;&gt;&amp;quot;default-network overlay:multihost&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-opt &lt;span class=&quot;s2&quot;&gt;&amp;quot;kv-store consul:${kvip}:8500&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --engine-install-url &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;install_url&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --digitalocean-image &lt;span class=&quot;s2&quot;&gt;&amp;quot;debian-8-x64&amp;quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  swarm-demo-3 &lt;span class=&quot;p&quot;&gt;&amp;amp;&lt;/span&gt;
+
+  &lt;span class=&quot;nb&quot;&gt;wait&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now, I would normally want to use the &lt;code&gt;--swarm&lt;/code&gt; flag here so machine automatically
+sets these up with our swarm... however the network overlay driver requires that
+container names must be unique across all nodes... and docker-machine just uses
+the container name &lt;code&gt;swarm-agent&lt;/code&gt; with the &lt;code&gt;--swarm&lt;/code&gt; flag, as such this creates
+a naming conflict... so we&amp;#39;ll have to enable swarm on these nodes manually for
+now.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+  &lt;span class=&quot;c&quot;&gt;# setup swarm on node 2&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;eval&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker-machine env swarm-demo-2&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+  docker run -d &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --name&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;swarm-agent2 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    swarm:latest &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    join &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --advertise&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker-machine ip swarm-demo-2&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;:2376 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    token://&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;swarm_token&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+  &lt;span class=&quot;c&quot;&gt;# setup swarm on node 3&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;eval&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker-machine env swarm-demo-3&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+  docker run -d &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --name&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;swarm-agent3 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    swarm:latest &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    join &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --advertise&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker-machine ip swarm-demo-3&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;:2376 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    token://&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;swarm_token&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So now we have a 3 node swarm cluster with multi-host networking enabled.
+With this, docker will automatically connect a container named &lt;code&gt;foo&lt;/code&gt; on node 2,
+to a container named &lt;code&gt;bar&lt;/code&gt; on node 3 with no extra setup.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;eval&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker-machine env --swarm swarm-demo-1&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+docker run -d --name foo -e constraint:node&lt;span class=&quot;o&quot;&gt;==&lt;/span&gt;swarm-demo-2 busybox top
+docker run --rm --name bar -e constraint:node&lt;span class=&quot;o&quot;&gt;==&lt;/span&gt;swarm-demo-3 busybox ping -c &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; foo
+PING foo &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;172.17.0.52&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 56&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;84&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; bytes of data.
+&lt;span class=&quot;m&quot;&gt;64&lt;/span&gt; bytes from 172.17.0.52: &lt;span class=&quot;nv&quot;&gt;icmp_seq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ttl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;64&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;time&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;0.039 ms
+
+--- foo ping statistics ---
+&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; packets transmitted, &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; received, 0% packet loss, &lt;span class=&quot;nb&quot;&gt;time &lt;/span&gt;0ms
+rtt min/avg/max/mdev &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; 0.039/0.039/0.039/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Ideally one could use compose against this cluster and everything just works...
+and it does, with a couple of caveats:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Currently swarm will co-schedule containers with links, so you must either be
+ok with linked containers being on the same node (pointless), or use the container
+names that compose generates (also horrible).&lt;/li&gt;
+&lt;li&gt;Machine only knows that node 1 is in the cluster, so you must always use the
+env setup from that node as such &lt;code&gt;eval $(docker-machine env --swarm swarm-demo-1)&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;As you can see, this is clearly very rough around the edges still, but we are
+very close to being really easy to setup and maintain a docker cluster. Give it
+a shot for yourself!&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Docker logging</title>
+   <link href="http://www.container42.com/2015/04/16/docker-logging/"/>
+   <updated>2015-04-16T20:00:00+00:00</updated>
+   <id>http://www.container42.com/2015/04/16/docker-logging</id>
+   <content type="html">&lt;p&gt;Logging in Docker has always been quite convenient for a developer. Send your
+logs to stdout/stderr and Docker picks them up, you can view them with
+&lt;code&gt;docker logs&lt;/code&gt;. This command lets you tail the logs, follow them, etc. It can be
+really nice. 
+In production scenarios this has proven to be a pain point...&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;As it turns out, in production, people like to actually collect logs from multiple
+servers, do analytics, and other fun things. Unfortunately docker&amp;#39;s logging
+didn&amp;#39;t really handle this well. There are some projects that help you extract
+container logs out of Docker directly and forward them to another service
+(e.g. &lt;a href=&quot;https://github.com/progrium/logspout&quot;&gt;Logspout&lt;/a&gt;), however this is less
+than ideal.&lt;/p&gt;
+
+&lt;p&gt;Docker 1.6 changes this. The logging infrastructure in Docker has been
+driver-ized. A default logging driver can be selected when setting up the
+daemon, this can get overridden when creating containers. 
+Included drivers are: &lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;json-log&lt;/li&gt;
+&lt;li&gt;none&lt;/li&gt;
+&lt;li&gt;syslog&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The &lt;code&gt;json-log&lt;/code&gt; driver mimics the logging of previous versions of Docker. &lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;none&lt;/code&gt; driver disables logging, especially useful for those really noisy
+apps. &lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;syslog&lt;/code&gt; driver... well... logs to syslog. 
+Here&amp;#39;s an example output from a container using the syslog driver, with the an
+entry from nginx:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;docker/cc198c45b027[16853]: 172.17.0.7 - - [17/Apr/2015:02:00:02 +0000] &amp;quot;GET / HTTP/1.1&amp;quot; 200 2461 &amp;quot;-&amp;quot; &amp;quot;Mozilla/5.0 (Windows NT 5.1; rv:6.0.2) Gecko/20100101 Firefox/6.0.2&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The tag being used here is &lt;code&gt;docker/&amp;lt;container id&amp;gt;[pid]&lt;/code&gt;. There&amp;#39;s been some
+discussion on using the container&amp;#39;s name here instead of the ID... ultimately
+in the future this will likely be configurable to use whatever container field
+you want. The &lt;code&gt;pid&lt;/code&gt; in this case is the actual pid as it is seen from the host,
+not the pid from inside the container.&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;docker logs&lt;/code&gt; command will only work with the &lt;code&gt;json-file&lt;/code&gt; driver, but I&amp;#39;m
+sure you probably already have your own tool for reading logs that&amp;#39;s way better
+than what &lt;code&gt;docker logs&lt;/code&gt; could provide.&lt;/p&gt;
+
+&lt;p&gt;It should also be extremely simple to write a custom logging driver, the &lt;code&gt;syslog&lt;/code&gt;
+driver is a grand total of 45 lines of code
+(&lt;a href=&quot;https://github.com/docker/docker/blob/v1.6.0/daemon/logger/syslog/syslog.go&quot;&gt;syslog.go&lt;/a&gt;).
+Here are the interfaces:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Message&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;ContainerID&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;Line&lt;/span&gt;        &lt;span class=&quot;p&quot;&gt;[]&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;byte&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;Source&lt;/span&gt;      &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;Timestamp&lt;/span&gt;   &lt;span class=&quot;nx&quot;&gt;time&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Time&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Logger&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;Log&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;error&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;Name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;Close&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;error&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So if none of the currently available logging drivers suits you, it should be
+pretty simple to implement your own!&lt;/p&gt;
+
+&lt;p&gt;And as always, pull requests are &lt;em&gt;always&lt;/em&gt; welcome!&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Data-only container madness</title>
+   <link href="http://www.container42.com/2014/11/18/data-only-container-madness/"/>
+   <updated>2014-11-18T10:00:00+00:00</updated>
+   <id>http://www.container42.com/2014/11/18/data-only-container-madness</id>
+   <content type="html">&lt;p&gt;Data-only containers are a pattern for managing your docker volumes with
+containers instead of manually with host-mounted volumes. For more info on the
+pattern, see
+&lt;a href=&quot;http://container42.com/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/&quot;&gt;Data-only container pattern&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;If you are using the &lt;code&gt;busybox&lt;/code&gt;, &lt;code&gt;scratch&lt;/code&gt;, or
+&lt;code&gt;&amp;lt;insert minimally sized image here&amp;gt;&lt;/code&gt;, you are doing it wrong, and here&amp;#39;s why.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;Let&amp;#39;s take this Dockerfile:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-Dockerfile&quot; data-lang=&quot;Dockerfile&quot;&gt;&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; debian:jessie
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; useradd mickey
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; mkdir /foo &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; touch /foo/bar &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; chown -R mickey:mickey /foo
+USER mickey
+&lt;span class=&quot;k&quot;&gt;CMD&lt;/span&gt; ls -lh /foo
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Build it:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;~: docker build -t mickey_foo -&amp;lt; Dockerfile
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Deploy it:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;~: docker run --rm -v /foo mickey_foo
+total 0
+-rw-r--r-- &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; mickey mickey &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 05:58 bar
+~:
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Ok, all good, now with a data-only container with &lt;code&gt;busybox&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;~: docker run -v /foo --name mickey_data busybox &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;
+~: docker run --rm --volumes-from mickey_data mickey_foo
+total 0
+&lt;span class=&quot;c&quot;&gt;# Empty WTF??&lt;/span&gt;
+~: docker run --rm --volumes-from mickey_data mickey_foo ls -lh /
+total 68K
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 bin
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Oct  &lt;span class=&quot;m&quot;&gt;9&lt;/span&gt; 18:27 boot
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;5&lt;/span&gt; root root  &lt;span class=&quot;m&quot;&gt;360&lt;/span&gt; Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:05 dev
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; root root 4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:05 etc
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 foo
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Oct  &lt;span class=&quot;m&quot;&gt;9&lt;/span&gt; 18:27 home
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;9&lt;/span&gt; root root 4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 lib
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 lib64
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Nov  &lt;span class=&quot;m&quot;&gt;5&lt;/span&gt; 21:40 media
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Oct  &lt;span class=&quot;m&quot;&gt;9&lt;/span&gt; 18:27 mnt
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Nov  &lt;span class=&quot;m&quot;&gt;5&lt;/span&gt; 21:40 opt
+dr-xr-xr-x &lt;span class=&quot;m&quot;&gt;120&lt;/span&gt; root root    &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:05 proc
+drwx------   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 root
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;3&lt;/span&gt; root root 4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 run
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 sbin
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Nov  &lt;span class=&quot;m&quot;&gt;5&lt;/span&gt; 21:40 srv
+dr-xr-xr-x  &lt;span class=&quot;m&quot;&gt;13&lt;/span&gt; root root    &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:05 sys
+drwxrwxrwt   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root root 4.0K Nov  &lt;span class=&quot;m&quot;&gt;5&lt;/span&gt; 21:46 tmp
+drwxr-xr-x  &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt; root root 4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 usr
+drwxr-xr-x  &lt;span class=&quot;m&quot;&gt;11&lt;/span&gt; root root 4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 var
+&lt;span class=&quot;c&quot;&gt;# Owened by root?  WTF???&lt;/span&gt;
+~: docker run --rm --volumes-from mickey_data mickey_foo touch /foo/bar
+touch: cannot touch &lt;span class=&quot;s1&quot;&gt;&amp;#39;/foo/bar&amp;#39;&lt;/span&gt;: Permission denied
+&lt;span class=&quot;c&quot;&gt;# WTF????&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Uh-oh, what happened? &lt;code&gt;/foo&lt;/code&gt; still exists, but it&amp;#39;s empty... and it&amp;#39;s owned by
+&lt;code&gt;root&lt;/code&gt;?&lt;/p&gt;
+
+&lt;p&gt;Let&amp;#39;s try this instead:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;~: docker rm -v mickey_data &lt;span class=&quot;c&quot;&gt;# remove the old one&lt;/span&gt;
+mickey_data
+~: docker run --name mickey_data -v /foo mickey_foo &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;
+~: docker run --rm --volumes-from mickey_data mickey_foo
+total 0
+-rw-r--r-- &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; mickey mickey &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 05:58 bar
+&lt;span class=&quot;c&quot;&gt;# Yes!&lt;/span&gt;
+~: docker run --rm --volumes-from mickey_data mickey_foo ls -lh /
+total 68K
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root   root   4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 bin
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root   root   4.0K Oct  &lt;span class=&quot;m&quot;&gt;9&lt;/span&gt; 18:27 boot
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;5&lt;/span&gt; root   root    &lt;span class=&quot;m&quot;&gt;360&lt;/span&gt; Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:11 dev
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; root   root   4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:11 etc
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; mickey mickey 4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:10 foo
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root   root   4.0K Oct  &lt;span class=&quot;m&quot;&gt;9&lt;/span&gt; 18:27 home
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;9&lt;/span&gt; root   root   4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 lib
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root   root   4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 lib64
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root   root   4.0K Nov  &lt;span class=&quot;m&quot;&gt;5&lt;/span&gt; 21:40 media
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root   root   4.0K Oct  &lt;span class=&quot;m&quot;&gt;9&lt;/span&gt; 18:27 mnt
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root   root   4.0K Nov  &lt;span class=&quot;m&quot;&gt;5&lt;/span&gt; 21:40 opt
+dr-xr-xr-x &lt;span class=&quot;m&quot;&gt;121&lt;/span&gt; root   root      &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:11 proc
+drwx------   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root   root   4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 root
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;3&lt;/span&gt; root   root   4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 run
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root   root   4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 sbin
+drwxr-xr-x   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root   root   4.0K Nov  &lt;span class=&quot;m&quot;&gt;5&lt;/span&gt; 21:40 srv
+dr-xr-xr-x  &lt;span class=&quot;m&quot;&gt;13&lt;/span&gt; root   root      &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:05 sys
+drwxrwxrwt   &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; root   root   4.0K Nov  &lt;span class=&quot;m&quot;&gt;5&lt;/span&gt; 21:46 tmp
+drwxr-xr-x  &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt; root   root   4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 usr
+drwxr-xr-x  &lt;span class=&quot;m&quot;&gt;11&lt;/span&gt; root   root   4.0K Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:02 var
+&lt;span class=&quot;c&quot;&gt;# YES!!&lt;/span&gt;
+~: docker run --rm --volumes-from mickey_data mickey_foo touch /foo/baz
+~: docker run --rm --volumes-from mickey_data mickey_foo ls -lh /foo
+total 0
+-rw-r--r-- &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; mickey mickey &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:11 bar
+-rw-r--r-- &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; mickey mickey &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; Nov &lt;span class=&quot;m&quot;&gt;18&lt;/span&gt; 06:12 baz
+&lt;span class=&quot;c&quot;&gt;# YES!!!&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So what happened here?&lt;/p&gt;
+
+&lt;p&gt;By using the same image for both the data-container, docker was able to seed the
+volume with the data from the image when we created the data container. Data
+from the image is only ever seeded into a volume when the volume is created.
+Since &lt;code&gt;busybox&lt;/code&gt; was originally used as the image for the data-only container,
+and there is no &lt;code&gt;/foo&lt;/code&gt; in the &lt;code&gt;busybox&lt;/code&gt; image, docker created the dir as &lt;code&gt;root&lt;/code&gt;
+and nothing else.  Since &lt;code&gt;--volumes-from&lt;/code&gt; does not actually create a volume, it
+just re-uses an existing volume, nothing ever made it into the volume itself.
+Since the volume dir was owned by root and we were trying to use a non-root user
+in the container to modify the volume, it failed.&lt;br&gt;
+This is extremely common with images like &lt;code&gt;mongodb&lt;/code&gt;, &lt;code&gt;mysql&lt;/code&gt;, and &lt;code&gt;postgres&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;So are we stuck using the same image for both? Well, yes if you want it to work
+as expected... however &lt;strong&gt;stuck&lt;/strong&gt; isn&amp;#39;t really the correct term here. The reason
+we are using a minimal image is to save space, but this is not what actually
+happened...&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;debian:jessie&lt;/code&gt; image is roughly 150MB. Because of the way Docker works, we
+can re-use the &lt;code&gt;debian:jessie&lt;/code&gt; image 1000 (or 10000, or 100000) times and it is
+still only ever using 150MB.&lt;br&gt;
+A container itself does not take up any space unless as part of running it you&amp;#39;ve
+written something to disk.  This is because a container&amp;#39;s filesystem is
+essentially a write-layer over the image. This enable Docker to use an image
+&lt;strong&gt;N&lt;/strong&gt; times (for containers) without taking up any extra space.&lt;br&gt;
+So in reality, by using &lt;code&gt;busybox&lt;/code&gt;, we&amp;#39;ve actually taken up &lt;strong&gt;more&lt;/strong&gt; space than
+by using the same image (ie, &lt;code&gt;mickey_foo&lt;/code&gt; in the example) multiple times.&lt;/p&gt;
+
+&lt;p&gt;In practice, I usually do something like this:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;~: docker run --name mydb-data --entrypoint /bin/echo mysql Data-only container &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; mydb
+~: docker run -d --name mydb --volumes-from mydb-data mysql
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;In the above example, the command the data-only container ends up running is
+&lt;code&gt;/bin/sh -c &amp;#39;/bin/echo Data-only container for mydb&amp;#39;&lt;/code&gt;.&lt;br&gt;
+This makes the data-only container relatively easy to grep for, and also gives a
+good clue, based on the command being run in the container, what the container
+is actually for.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Docker In-depth: Volumes</title>
+   <link href="http://www.container42.com/2014/11/03/docker-indepth-volumes/"/>
+   <updated>2014-11-03T11:00:00+00:00</updated>
+   <id>http://www.container42.com/2014/11/03/docker-indepth-volumes</id>
+   <content type="html">&lt;p&gt;One of the most common roadblocks for people using Docker, and indeed easily the
+most common questions I see on on various Docker support channels, is regarding
+the use of volumes.&lt;/p&gt;
+
+&lt;p&gt;So let&amp;#39;s take a closer look at how volumes work in Docker.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;First, let&amp;#39;s dispell the most common and first misconception:&lt;/p&gt;
+
+&lt;p&gt;Docker volumes are for persistence.&lt;/p&gt;
+
+&lt;p&gt;This likely comes from the idea that container&amp;#39;s are not persitant, which is
+indeed not true.  Container&amp;#39;s persist until you remove them, and you can only do
+that by doing&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker rm my_container
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;If you did not type this command then your container still exists and will
+continue to exist, can be started, stopped, etc.  If you do not see your
+container, you should see this:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;docker ps -a
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&lt;code&gt;docker ps&lt;/code&gt; only ever shows you running containers, but a container can be in a
+stopped state, in which case the above command would show you all containers
+regardless of state.  &lt;code&gt;docker run ...&lt;/code&gt; is actually a multi-part command, it
+creates a &lt;em&gt;new&lt;/em&gt; container, then starts it.&lt;/p&gt;
+
+&lt;p&gt;So, again, volumes are &lt;em&gt;not&lt;/em&gt; for persitance.&lt;/p&gt;
+
+&lt;h3&gt;What is a volume&lt;/h3&gt;
+
+&lt;p&gt;Volumes decouple the life of the data being stored in them from the life of the
+container that created them.  This makes it so you &lt;em&gt;can&lt;/em&gt;
+&lt;code&gt;docker rm my_container&lt;/code&gt; and your data will not be removed.&lt;/p&gt;
+
+&lt;p&gt;A volume can be created in two ways:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Specifying &lt;code&gt;VOLUME /some/dir&lt;/code&gt; in a Dockerfile&lt;/li&gt;
+&lt;li&gt;Specying it as part of your run command as &lt;code&gt;docker run -v /some/dir&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Either way, these two things do &lt;em&gt;exactly&lt;/em&gt; the same thing. It tells Docker to
+create a directory on the host, within the docker root path
+(by default /var/lib/docker), and mount it to the path you&amp;#39;ve specified
+(&lt;code&gt;/some/dir&lt;/code&gt; above).  When you remove the container using this volume, the
+volume itself continues to live on.&lt;/p&gt;
+
+&lt;p&gt;If the path specified does not exist within the container, a directory will be
+automatically created.&lt;/p&gt;
+
+&lt;p&gt;You can tell docker to remove a volume along with the container:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker rm -v my_container
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Sometimes you&amp;#39;ve already got a directory on your host that you want to use in
+the container, so the CLI has an extra option for specifying this:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker run -v /host/path:/some/path ...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This tells docker to use the specified host path specifically, instead of
+creating one itself within the docker root, and mount that to the specified path
+within the container (&lt;code&gt;/some/path&lt;/code&gt; above). Note, that this can also be a file
+instead of a directory. This is commonly referred to as a bind-mount within
+docker terminology (though technically speaking, all volumes are bind-mounts in
+the sense of what is actually happening).
+If the path on the host does not exist, a directory will be automatically be
+created at the given path.&lt;/p&gt;
+
+&lt;p&gt;Bind-mount volumes are treated a little differently than a &amp;quot;normal&amp;quot; volume, with
+the preference of not modfying things on the host that Docker did not itself
+create:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;With a &amp;quot;normal&amp;quot; volume, docker will automatically copy data at the
+specified volume path (e.g. &lt;code&gt;/some/path&lt;/code&gt;, above) into the new directory that
+was created by docker, with a &amp;quot;bind-mount&amp;quot; volume this does not happen.&lt;/li&gt;
+&lt;li&gt;When you &lt;code&gt;docker rm -v my_container&lt;/code&gt; a container with &amp;quot;bind-mount&amp;quot; volumes,
+the &amp;quot;bind-mount&amp;quot; volumes will &lt;em&gt;not&lt;/em&gt; be removed.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;You can share volumes with another container.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker run --name my_container -v /some/path ...
+docker run --volumes-from my_container --name my_container2 ...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The command above will tell docker to mount the same volumes from the first
+container into the 2nd container.  This effectively allows you to share data
+between two containers.&lt;/p&gt;
+
+&lt;p&gt;If you &lt;code&gt;docker rm -v my_container&lt;/code&gt;, if the 2nd container above still exists, the
+volumes will &lt;em&gt;not&lt;/em&gt; be removed, and indeed will not ever be removed unless you
+remove the second container with the same &lt;code&gt;docker rm -v my_container2&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3&gt;VOLUME in Dockerfiles&lt;/h3&gt;
+
+&lt;p&gt;As mentioned earlier, the &lt;code&gt;VOLUME&lt;/code&gt; declaration in a &lt;code&gt;Dockerfile&lt;/code&gt; does the same
+exact thing as the &lt;code&gt;-v&lt;/code&gt; flag on the &lt;code&gt;docker run&lt;/code&gt; command (except you can&amp;#39;t
+specify a host path in a &lt;code&gt;Dockerfile&lt;/code&gt;).  It just so happens that because of
+this, there can be suprising effects when building your image.&lt;/p&gt;
+
+&lt;p&gt;Each command in a &lt;code&gt;Dockerfile&lt;/code&gt; creates a new container which runs the specified
+command and commits the container back to an image, each step building off the
+previous one.  So &lt;code&gt;ENV FOO=bar&lt;/code&gt; in a dockerfile is the equivelant of:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;cid&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker run -e &lt;span class=&quot;nv&quot;&gt;FOO&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;bar &amp;lt;image&amp;gt;&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+docker commit &lt;span class=&quot;nv&quot;&gt;$cid&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So let&amp;#39;s look at what happens with  this example &lt;code&gt;Dockerfile&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-Dockerfile&quot; data-lang=&quot;Dockerfile&quot;&gt;&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; debian:jessie
+&lt;span class=&quot;k&quot;&gt;VOLUME&lt;/span&gt; /foo/bar
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; touch /foo/bar/baz
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker build -t my_debian .
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;What we expect to happen here is docker to create an image called &lt;code&gt;my_debian&lt;/code&gt;
+with a volume at &lt;code&gt;/foo/bar&lt;/code&gt; and put an empty file at &lt;code&gt;/foo/bar/baz&lt;/code&gt;, but let&amp;#39;s
+look at the equivelant CLI commands actually do:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;cid&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker run -v /foo/bar debian:jessie&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;image_id&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker commit &lt;span class=&quot;nv&quot;&gt;$cid&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;cid&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;docker run &lt;span class=&quot;nv&quot;&gt;$image_id&lt;/span&gt; touch /foo/bar/baz&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+docker commit &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;cid&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; my_debian
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now, this isn&amp;#39;t &lt;em&gt;exactly&lt;/em&gt; what happens, but it is a very close approximation.&lt;/p&gt;
+
+&lt;p&gt;So, what happened here is the volume is created before anything is actually in
+&lt;code&gt;/foo/bar&lt;/code&gt;, and as such every time we start a container from this image we will
+have an &lt;em&gt;emtpy&lt;/em&gt; directory at &lt;code&gt;/foo/bar&lt;/code&gt;.  This happens because as stated earlier,
+each &lt;code&gt;Dockerfile&lt;/code&gt; command is creating a new container.  This means a &lt;em&gt;new volume&lt;/em&gt;
+is also created.  Since in the example &lt;code&gt;Dockerfile&lt;/code&gt; the volume is specified
+before anything existed in that directory, when the container that was created
+to run the &lt;code&gt;touch /foo/bar/baz&lt;/code&gt; command, it did so with a volume mounted in for
+&lt;code&gt;/foo/bar&lt;/code&gt;, so &lt;code&gt;baz&lt;/code&gt; was written to the volume mounted at &lt;code&gt;/foo/bar&lt;/code&gt;, not the
+actual container/image filesystem.&lt;/p&gt;
+
+&lt;p&gt;So, keep in mind the placement of your &lt;code&gt;VOLUME&lt;/code&gt; declarations in your Dockerfile
+as it does create essentially immutable directories in your image.&lt;/p&gt;
+
+&lt;p&gt;&lt;del&gt;&lt;code&gt;docker cp&lt;/code&gt;&lt;/del&gt;(&lt;a href=&quot;https://github.com/docker/docker/pull/8509&quot;&gt;#8509&lt;/a&gt;),
+&lt;code&gt;docker commit&lt;/code&gt;, and &lt;code&gt;docker export&lt;/code&gt; do not support volumes (yet).&lt;/p&gt;
+
+&lt;p&gt;Currently, the only way to manage volumes (create/destroy) is during container
+creation/descruction, which is a little odd since volumes are meant to
+decouple the data contained within them from the life of the container. This is
+something being worked on but is not yet merged
+(&lt;a href=&quot;https://github.com/docker/docker/pull/8484&quot;&gt;#8484&lt;/a&gt;).&lt;/p&gt;
+
+&lt;p&gt;If you want this sort of functionality, checkout
+&lt;a href=&quot;https://github.com/cpuguy83/docker-volumes&quot;&gt;docker-volumes&lt;/a&gt;&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Docker Quicktip #6: Restart Policies</title>
+   <link href="http://www.container42.com/2014/09/30/docker-restart-policies/"/>
+   <updated>2014-09-30T11:00:00+00:00</updated>
+   <id>http://www.container42.com/2014/09/30/docker-restart-policies</id>
+   <content type="html">&lt;p&gt;Docker 1.2 introduced a powerful new feature called &amp;quot;restart policies&amp;quot;.
+Restart policies replaces the old daemon &amp;quot;-r&amp;quot; option, which itself would try to
+restart all previously running containers upon daemon restart, however this was
+rife with trouble.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;ol&gt;
+&lt;li&gt;It just flat out didn&amp;#39;t always work, and was basically unreliable in
+production&lt;/li&gt;
+&lt;li&gt;Maybe you didn&amp;#39;t actually need &lt;em&gt;all&lt;/em&gt; of your containers restarted&lt;/li&gt;
+&lt;li&gt;It did not resolve links, so if a container had links and docker tried to
+start that container before the linked container was started, it would fail
+to start.&lt;/li&gt;
+&lt;li&gt;Does not apply to container crashes/stopping&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;With restart policies this all changes.&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;When your system boots and starts up docker, docker will reliabily restart
+all containers that have a restart policy applied&lt;/li&gt;
+&lt;li&gt;You can specify per-container what the restart polciy should be&lt;/li&gt;
+&lt;li&gt;Docker will walk link dependencies and start them in the correct order&lt;/li&gt;
+&lt;li&gt;Will monitor/restart crashed containers&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3&gt;Usage&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker run -d --restart always --name myredis redis
+docker run -d --restart always --link myredis:redisdb myapp
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Other restart policy modes are:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;no - no restart policy&lt;/li&gt;
+&lt;li&gt;on-failure - restart if exit code is not 0&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Docker will also back-off on restarts if they are too frequent, and when using
+&amp;quot;on-failure&amp;quot; you can set the max restarts.&lt;/p&gt;
+
+&lt;p&gt;On minimal distros such as boot2docker, restart policies can be used in place of
+an init system... I&amp;#39;d even argue that if you are containerizing everything it
+should always replace an init system.&lt;/p&gt;
+
+&lt;p&gt;Basically, if you aren&amp;#39;t using resart policies you are doing it wrong. If you
+aren&amp;#39;t using restart=always on your long running processes you are probably also
+doing it wrong.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Docker Grand Ambassador</title>
+   <link href="http://www.container42.com/2014/08/28/docker-grand-ambassador/"/>
+   <updated>2014-08-28T15:15:00+00:00</updated>
+   <id>http://www.container42.com/2014/08/28/docker-grand-ambassador</id>
+   <content type="html">&lt;p&gt;In Docker, when you want two containers to be able to discover each other and
+communicate, you use links... Or at least when you first started you did and
+and then you gave up because links don&amp;#39;t work well right now.&lt;/p&gt;
+
+&lt;p&gt;The problem with linking is that links are static. When a container which is
+being linked to is restarted it very likely has a new IP address. Any container
+which is linked to this restarted container will also need to be restarted in
+order to pick up this new IP address. Therefore linked containers can often have
+a cascading effect of needing to restart many containers in order to update
+links.&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+&lt;p&gt;Links can also only be created one-way, and the linked-to container must exist,
+and be running, in order to link to it.&lt;/p&gt;
+
+&lt;p&gt;You can use the &lt;a href=&quot;http://docs.docker.com/articles/ambassador_pattern_linking/&quot;&gt;Ambassador pattern&lt;/a&gt;
+as a way to mitigate this, but as used in the example they it is marginally
+useful in a multi-host setup and much less useful in a single host scenario.&lt;/p&gt;
+
+&lt;p&gt;Indeed solutions to this are being worked on:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/docker/docker/issues/7468&quot;&gt;Proposal: Links: Dynamic Links&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/docker/docker/issues/7467&quot;&gt;Proposal: Links: Upgrading the network model&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/docker/docker/pull/7677&quot;&gt;Update /etc/hosts when linked container is restarted&lt;/a&gt; -&amp;gt; This one just got merged!&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;People do however need something for now.  SkyDNS+SkyDock, etcd, consul, etc all
+exist for this.
+I&amp;#39;ve personally used and recommended SkyDNS+Skydock, however running a DNS server
+isn&amp;#39;t neccessarily desirable.  For the others, your applications need to be
+modified to take advantage of them.&lt;/p&gt;
+
+&lt;p&gt;This is why I created &lt;a href=&quot;https://github.com/cpuguy83/docker-grand-ambassador&quot;&gt;Grand Ambassador&lt;/a&gt;.
+Grand Ambassador acts as a proxy server for accessing some container, much like
+the example in the &lt;em&gt;Ambassador Pattern Linking&lt;/em&gt; article linked to above. What
+Grand Ambassador does differently is that it is dynamic. That means it will not
+only automatically create a proxy on all exposed ports for the passed in
+container, it will also automatically detect changes to that container and adjust
+the proxy server accordingly (e.g. it has a new IP address b/c of a container restart)&lt;/p&gt;
+
+&lt;h3&gt;Example Usage:&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker run -d --expose &lt;span class=&quot;m&quot;&gt;6379&lt;/span&gt; --name redis redis
+docker run -d -v /var/run/docker.sock:/var/run/docker.sock &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --name red-amb &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  cpuguy83/docker-grand-ambassador -name redis
+docker run --rm --link red-amb:db redis redis-cli -h db ping
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;In the above example, the redis-ambassador is used in place of the actual redis
+container for connecting to it.  I can restart the redis container and the
+ambassador will detect that change and adjust accordingly.  No need to restart
+the ambassador or the linking container as you would without the ambassador.&lt;/p&gt;
+
+&lt;p&gt;So this has actually been out for a little while now, I just never posted about
+it. Recently I made some updates to it that enables some interesting
+functionality.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker run -d -v /var/run/docker.sock:/var/run/docker.sock &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  --name red-amb cpuguy83/docker-grand-ambassador -name redis
+docker run -d --expose &lt;span class=&quot;m&quot;&gt;6379&lt;/span&gt; --name redis redis
+docker run --link redis-amb:db redis redis-cli -h db ping
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Here you can see I am creating the ambassador &lt;em&gt;before&lt;/em&gt; the redis container even
+exists.  The ambassador will wait for the container with the given name to be
+created and then automatically setup the proxy for our redis-cli to use&lt;/p&gt;
+
+&lt;p&gt;I can also:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# continued from above&lt;/span&gt;
+docker rm -f redis
+docker run -d --name --expose &lt;span class=&quot;m&quot;&gt;6379&lt;/span&gt; redis redis
+docker run --link redis-amb:db redis redis-cli -h db ping
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Here, with everything still running, I can remove the redis container and create
+a new one with the same name.  Grand Ambassador will see the removal, stop the
+proxy, then wait for the container with the same name to be created/started
+again. So, for instnace, you can create a make a quick configuration change to
+redis, create a new container, and all without modifying, restarting, change in
+any way the container that is actually wanting to use redis.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;The above examples are rudimentary for demo purposes.  You could have a
+full-blown app which does not exit like the &lt;code&gt;redis-cli -h db ping&lt;/code&gt; does.&lt;/em&gt;&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
    <title>DockerHub in dev-test Workflow</title>
-   <link href="http://www.tech-d.net/2014/07/31/dockerhub-in-dev-test-workflow/"/>
+   <link href="http://www.container42.com/2014/07/31/dockerhub-in-dev-test-workflow/"/>
    <updated>2014-07-31T21:24:19+00:00</updated>
-   <id>http://www.tech-d.net/2014/07/31/dockerhub-in-dev-test-workflow</id>
+   <id>http://www.container42.com/2014/07/31/dockerhub-in-dev-test-workflow</id>
    <content type="html">&lt;p&gt;When DockerHub was announced there was a really handy feature added that you may have missed: Webhooks.&lt;/p&gt;
 
 &lt;p&gt;With DockerHub you can setup a webhook to call out to an external service once a successful push of a particular image is made (this includes completion of automated builds).&lt;/p&gt;
@@ -100,9 +1319,9 @@
  
  <entry>
    <title>libswarm demotime - logging</title>
-   <link href="http://www.tech-d.net/2014/07/17/libswarm-demotime-logging/"/>
+   <link href="http://www.container42.com/2014/07/17/libswarm-demotime-logging/"/>
    <updated>2014-07-17T20:09:12+00:00</updated>
-   <id>http://www.tech-d.net/2014/07/17/libswarm-demotime-logging</id>
+   <id>http://www.container42.com/2014/07/17/libswarm-demotime-logging</id>
    <content type="html">&lt;p&gt;If you don&amp;#39;t know what libswarm is take a gander at &lt;a href=&quot;http://www.tech-d.net/2014/07/03/libswarm/&quot; title=&quot;Libswarm (in a nutshell)&quot;&gt;Libswarm in a nutshell&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;Just a quick demo showing off what libswarm can do with logging.&lt;/p&gt;
@@ -123,7 +1342,7 @@ Getting logs tcp://10.0.0.2:2375 &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a
 
 2014-07-17 19:04:23.43114032 +0000 UTC  tcp://10.0.0.2:2375 agitated_yonath INFO    this is a log message
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;&lt;a href=&quot;http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-1daemon.png&quot;&gt;&lt;img src=&quot;/assets/libswarm-logforwarder-1daemon.png&quot; alt=&quot;libswarm-logforwarder-1daemon&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/assets/libswarm-logforwarder-1daemon.png&quot;&gt;&lt;img src=&quot;/assets/libswarm-logforwarder-1daemon.png&quot; alt=&quot;libswarm-logforwarder-1daemon&quot;&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;So we told swarmd to fire up the logforwarder backend and connect to the docker daemon on tcp://10.0.0.2:2375, attach to each of the containers in the daemon, convert the stdout/stderr streams to log messages and forward them into the stdoutlogger (which is a backend made simply for demo purposes) which prints to the terminal&amp;#39;s stdout.&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# Now lets connect to multiple daemons with multiple containers
@@ -154,17 +1373,19 @@ Getting logs tcp://10.0.0.3:2375 [hopeful_babbage]
 
 &lt;p&gt;&lt;a href=&quot;http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-2daemons.png&quot;&gt;&lt;img src=&quot;/assets/libswarm-logforwarder-2daemons.png&quot; alt=&quot;libswarm-logforwarder-2daemons&quot;&gt;&lt;/a&gt;&lt;/p&gt;
 
+&lt;p&gt;)&lt;/p&gt;
+
 &lt;p&gt;Instead of &lt;code&gt;stdoutlogger&lt;/code&gt;, this could be swapped out for syslog, logstash, whatever... it just needs to implement the libswarm &lt;code&gt;Log&lt;/code&gt; verb.&lt;/p&gt;
 
-&lt;p&gt;&lt;a href=&quot;http://www.tech-d.net/wp-content/uploads/2014/07/libswarm-logforwarder-syslog.png&quot;&gt;&lt;img src=&quot;/assets/libswarm-logforwarder-syslog.png&quot; alt=&quot;libswarm-logforwarder-syslog&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/assets/libswarm-logforwarder-syslog.png&quot;&gt;&lt;img src=&quot;/assets/libswarm-logforwarder-syslog.png&quot; alt=&quot;libswarm-logforwarder-syslog&quot;&gt;&lt;/a&gt;&lt;/p&gt;
 </content>
  </entry>
  
  <entry>
    <title>Libswarm (in a nutshell)</title>
-   <link href="http://www.tech-d.net/2014/07/03/libswarm/"/>
+   <link href="http://www.container42.com/2014/07/03/libswarm/"/>
    <updated>2014-07-03T14:05:47+00:00</updated>
-   <id>http://www.tech-d.net/2014/07/03/libswarm</id>
+   <id>http://www.container42.com/2014/07/03/libswarm</id>
    <content type="html">&lt;p&gt;At Dockercon, Docker announced a new project being worked on called &lt;code&gt;libswarm&lt;/code&gt;.&lt;/p&gt;
 
 &lt;p&gt;I wanted to clarify what exactly libswarm is, what it does, and what it doesn&amp;#39;t do.&lt;/p&gt;
@@ -254,9 +1475,9 @@ Getting logs tcp://10.0.0.3:2375 [hopeful_babbage]
  
  <entry>
    <title>Docker Quicktip #5: Backing up Volumes</title>
-   <link href="http://www.tech-d.net/2014/05/05/docker-quicktip-5-backing-up-volumes/"/>
+   <link href="http://www.container42.com/2014/05/05/docker-quicktip-5-backing-up-volumes/"/>
    <updated>2014-05-05T14:48:25+00:00</updated>
-   <id>http://www.tech-d.net/2014/05/05/docker-quicktip-5-backing-up-volumes</id>
+   <id>http://www.container42.com/2014/05/05/docker-quicktip-5-backing-up-volumes</id>
    <content type="html">&lt;p&gt;Data in Docker volumes is generally super important.  In fact if you are doing your containers correctly the stuff in the volumes is the only thing you need to worry about backing up as containers shouldn&amp;#39;t be storing anything at all.&lt;/p&gt;
 
 &lt;p&gt;So how do you access the data in volumes?&lt;/p&gt;
@@ -323,9 +1544,9 @@ docker run -d &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quo
  
  <entry>
    <title>Docker Quicktip #4 - Remote volumes</title>
-   <link href="http://www.tech-d.net/2014/03/29/docker-quicktip-4-remote-volumes/"/>
+   <link href="http://www.container42.com/2014/03/29/docker-quicktip-4-remote-volumes/"/>
    <updated>2014-03-29T22:21:40+00:00</updated>
-   <id>http://www.tech-d.net/2014/03/29/docker-quicktip-4-remote-volumes</id>
+   <id>http://www.container42.com/2014/03/29/docker-quicktip-4-remote-volumes</id>
    <content type="html">&lt;p&gt;This one builds off the idea of using &lt;a href=&quot;http://www.tech-d.net/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/&quot; title=&quot;Persistent volumes with Docker – Data-only container pattern&quot;&gt;data-only containers&lt;/a&gt;.  Let&amp;#39;s step into the unknown and add a second host into the mix.&lt;/p&gt;
 
 &lt;p&gt;What do you use when you need to share data with containers across hosts?
@@ -365,9 +1586,9 @@ foo
  
  <entry>
    <title>Docker quicktip #3 - ONBUILD</title>
-   <link href="http://www.tech-d.net/2014/02/06/docker-quicktip-3-onbuild/"/>
+   <link href="http://www.container42.com/2014/02/06/docker-quicktip-3-onbuild/"/>
    <updated>2014-02-06T11:41:10+00:00</updated>
-   <id>http://www.tech-d.net/2014/02/06/docker-quicktip-3-onbuild</id>
+   <id>http://www.container42.com/2014/02/06/docker-quicktip-3-onbuild</id>
    <content type="html">&lt;p&gt;Docker 0.8 came out today, with it a slew of fantastic enhancements.  Today we&amp;#39;ll be looking at one of them: &lt;code&gt;ONBUILD&lt;/code&gt;.&lt;/p&gt;
 
 &lt;!--break--&gt;
@@ -565,9 +1786,9 @@ Successfully built b78c1813bd44
  
  <entry>
    <title>Docker Quicktip #2: exec it, please!</title>
-   <link href="http://www.tech-d.net/2014/01/27/docker-quicktip-2-exec-it/"/>
+   <link href="http://www.container42.com/2014/01/27/docker-quicktip-2-exec-it/"/>
    <updated>2014-01-27T14:26:37+00:00</updated>
-   <id>http://www.tech-d.net/2014/01/27/docker-quicktip-2-exec-it</id>
+   <id>http://www.container42.com/2014/01/27/docker-quicktip-2-exec-it</id>
    <content type="html">&lt;p&gt;Often when creating a Docker container it is necessary to do a bit of setup before starting the main process you wanted. Sometimes this is just a one-time setup for the first time the container starts (setting up database users, importing data, etc), other times it&amp;#39;s setting up the environment to get your process going (as many init.d scripts also do). In any case some script is needed to run before running the main application that the container was created for.&lt;/p&gt;
 
 &lt;!--break--&gt;
@@ -635,9 +1856,9 @@ su postgres -c &lt;span class=&quot;s2&quot;&gt;&amp;quot;/usr/lib/postgresql/9.
  
  <entry>
    <title>Docker Quicktip #1: Entrypoint</title>
-   <link href="http://www.tech-d.net/2014/01/27/docker-quicktip-1-entrypoint/"/>
+   <link href="http://www.container42.com/2014/01/27/docker-quicktip-1-entrypoint/"/>
    <updated>2014-01-27T02:51:50+00:00</updated>
-   <id>http://www.tech-d.net/2014/01/27/docker-quicktip-1-entrypoint</id>
+   <id>http://www.container42.com/2014/01/27/docker-quicktip-1-entrypoint</id>
    <content type="html">&lt;p&gt;The first tip is aptly named &amp;quot;Entrypoint&amp;quot;. In this tips I kind of expect that you&amp;#39;ve played around with Docker a bit, probably even have some containers running for your dev environment.  So, in short, if you haven&amp;#39;t played yet, go play and come back!&lt;/p&gt;
 
 &lt;!--break--&gt;
@@ -669,78 +1890,89 @@ docker run -i -t -rm me/echo bar
  
  <entry>
    <title>Persistent volumes with Docker - Data-only container pattern</title>
-   <link href="http://www.tech-d.net/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/"/>
+   <link href="http://www.container42.com/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/"/>
    <updated>2013-12-16T16:32:42+00:00</updated>
-   <id>http://www.tech-d.net/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern</id>
-   <content type="html">&lt;p&gt;Docker has an option to allow specific folders in a container to be mapped to the normal filesystem on the host.  This allows us to have data in the container without making the data part of the Docker image, and without being bound to AUFS.&lt;/p&gt;
+   <id>http://www.container42.com/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern</id>
+   <content type="html">&lt;p&gt;Docker has an option to allow specific folders in a container to be mapped to
+the normal filesystem on the host.  This allows us to have data in the container
+without making the data part of the Docker image, and without being bound to
+AUFS.&lt;/p&gt;
 
 &lt;p&gt;There are a couple of issues with using volumes in certain scenarios:&lt;/p&gt;
 
 &lt;!--break--&gt;
 
 &lt;ol&gt;
-&lt;li&gt; Volumes are container specific, when you create a new container, even with the same image, you do not have access to the data.&lt;/li&gt;
-&lt;li&gt; Since image layers are built using containers, data saved to folders which have been specified as a volume does not make it to the next layer, or your final container&lt;/li&gt;
+&lt;li&gt; Volumes are container specific, when you create a new container, even with
+the same image, you do not have access to the data.&lt;/li&gt;
+&lt;li&gt; Since image layers are built using containers, data saved to folders which
+have been specified as a volume does not make it to the next layer, or your
+final container&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;If you want data to persist between updated containers you have to manually map data to the host outside the normal, container-specific mount points.&lt;/p&gt;
+&lt;p&gt;If you want data to persist between updated containers you have to manually map
+data to the host outside the normal, container-specific mount points.&lt;/p&gt;
 
 &lt;p&gt;For example, when creating a container:&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker run -d -v /var/container_data/mysql:/var/lib/mysql me/awesome_mysql_image
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;This, however, is generally not a good idea as you are tying the container to that host and you lose one of the things that makes Docker great: portability.&lt;/p&gt;
+&lt;p&gt;This, however, is generally not a good idea as you are tying the container to
+that host and you lose one of the things that makes Docker great: portability.&lt;/p&gt;
 
-&lt;p&gt;In addition to this, you&amp;#39;ve now created a container storage location that is not under Docker&amp;#39;s control.&lt;/p&gt;
+&lt;p&gt;In addition to this, you&amp;#39;ve now created a container storage location that is
+not under Docker&amp;#39;s control.&lt;/p&gt;
 
-&lt;p&gt;But... data must be able to be persisted, especially in the use case above, so new versions of an image can be used to replace the current container... so we take the risk and do it anyway.&lt;/p&gt;
+&lt;p&gt;But... data must be able to be persisted, especially in the use case above, so
+new versions of an image can be used to replace the current container... so we
+take the risk and do it anyway.&lt;/p&gt;
 
 &lt;p&gt;&lt;strong&gt;Introducing: Data-only containers&lt;/strong&gt;&lt;/p&gt;
 
-&lt;p&gt;Volumes are still great!  We can still use them and use them as intended by our Docker overlords!&lt;/p&gt;
+&lt;p&gt;Volumes are still great!  We can still use them and use them as intended by our
+Docker overlords!&lt;/p&gt;
 
-&lt;p&gt;Instead of manually setting these mount points on the docker host, let&amp;#39;s take the concept of SRP (Single Responsibility Principle) a bit farther.&lt;/p&gt;
+&lt;p&gt;Instead of manually setting these mount points on the docker host, let&amp;#39;s take
+the concept of SRP (Single Responsibility Principle) a bit farther.&lt;/p&gt;
 
-&lt;p&gt;We can create a container which is solely for storing data for another container:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-Dockerfile&quot; data-lang=&quot;Dockerfile&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Dockerfile&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; busybox
-&lt;span class=&quot;k&quot;&gt;VOLUME&lt;/span&gt; /var/lib/mysql
-&lt;span class=&quot;k&quot;&gt;CMD&lt;/span&gt; /bin/sh
+&lt;p&gt;We can create a container which is solely for storing data for another
+container:&lt;/p&gt;
+
+&lt;p&gt;Create the data-only container:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# docker run -d -v /var/lib/mysql -name data-mysql --enterypoint /bin/echo mysql
+data-only container for mysql
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;Create the image:&lt;/p&gt;
+&lt;p&gt;Great, so now we have a container which has a volume for /var/lib/mysql... now
+what.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;docker build -t cpuguy83/mysql_datastore&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Docker allows us to pull in volumes from another container to use in our own...
+using the above mysql example this would look like:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;docker run -d -volumes-from data-mysql -e MYSQL_ROOT_PASS=&amp;quot;muchsecurity&amp;quot; mysql
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Here, all data being saved by mysql will be stored in the volume specified by
+the &lt;code&gt;data-mysql&lt;/code&gt; container.&lt;/p&gt;
 
-&lt;p&gt;And create the container:&lt;/p&gt;
+&lt;p&gt;Since the &lt;code&gt;data-mysql&lt;/code&gt; container likely won&amp;#39;t ever need to be updated, and if it
+does we can easily handle moving the data around as needed, we essentially
+work-around the issues listed above and we still have good portability.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;docker run -i -t -name mysql_data cpuguy83/mysql_datastore&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;We can now create as many mysql instances as we can handle and use volumes from
+as many &lt;code&gt;data-mysql&lt;/code&gt; style containers as we want as well (provided unique naming
+or use of container ID&amp;#39;s).  This can much more easily be scripted than mounting
+folders ourselves since we are letting docker do the heavy lifting.&lt;/p&gt;
 
-&lt;p&gt;or simply&lt;/p&gt;
+&lt;p&gt;One thing that&amp;#39;s really cool is that these data-only containers don&amp;#39;t even nee
+to be running, it just needs to exist.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;docker run -i -t -name mysql_data -v /var/lib/mysql busybox /bin/sh&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Great, so now we have a container which has a volume for /var/lib/mysql... now what.&lt;/p&gt;
-
-&lt;p&gt;Docker allows us to pull in volumes from another container to use in our own... using the above mysql example this would look like:&lt;/p&gt;
-
-&lt;p&gt;&lt;code&gt;docker run -d -volumes-from mysql_data me/awesome_mysql_image&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Here, all data being saved by mysql will be stored in the volume specified by mysql_data container.&lt;/p&gt;
-
-&lt;p&gt;Since the mysql_data container likely won&amp;#39;t ever need to be updated, and if it does we can easily handle moving the data around as needed, we essentially work-around the issues listed above and we still have good portability.&lt;/p&gt;
-
-&lt;p&gt;We can now create as many mysql instances as we can handle and use volumes from as many mysql_data style containers as we want as well (provided unique naming or use of container ID&amp;#39;s).  This can much more easily be scripted than mounting folders ourselves since we are letting docker do the heavy lifting.&lt;/p&gt;
-
-&lt;p&gt;One thing that&amp;#39;s really cool is that these data-only containers don&amp;#39;t even need to be running, it just needs to exist.&lt;/p&gt;
-
-&lt;p&gt;This pattern definitely does not fit all use cases, but it may fit yours! Try it out!&lt;/p&gt;
+&lt;p&gt;This pattern definitely does not fit all use cases, but it may fit yours!
+Try it out!&lt;/p&gt;
 </content>
  </entry>
  
  <entry>
    <title>Burn Brighter</title>
-   <link href="http://www.tech-d.net/social/2013/08/11/burn-brighter/"/>
+   <link href="http://www.container42.com/social/2013/08/11/burn-brighter/"/>
    <updated>2013-08-11T02:37:51+00:00</updated>
-   <id>http://www.tech-d.net/social/2013/08/11/burn-brighter</id>
+   <id>http://www.container42.com/social/2013/08/11/burn-brighter</id>
    <content type="html">&lt;p&gt;Nearly 12 years ago President George W. Bush, standing in the rubble of the World Trade Center, proclaimed on his megaphone that the unspeakable act of terrorism was carried out on the brightest beacon of freedom in the world.&lt;/p&gt;
 
 &lt;!--break--&gt;
@@ -777,9 +2009,9 @@ docker run -i -t -rm me/echo bar
  
  <entry>
    <title>Threaded Ruby in Production - Rbx edition</title>
-   <link href="http://www.tech-d.net/2013/06/18/threaded-ruby-in-production-rbx-edition/"/>
+   <link href="http://www.container42.com/2013/06/18/threaded-ruby-in-production-rbx-edition/"/>
    <updated>2013-06-18T02:12:00+00:00</updated>
-   <id>http://www.tech-d.net/2013/06/18/threaded-ruby-in-production-rbx-edition</id>
+   <id>http://www.container42.com/2013/06/18/threaded-ruby-in-production-rbx-edition</id>
    <content type="html">&lt;p&gt;At enVu we use Ruby and Rails to bring together various pieces of 3rd party software to make them integrate a bit better with our business requirements.&lt;/p&gt;
 
 &lt;!--break--&gt;
@@ -816,9 +2048,9 @@ With Rubinius that RAM usage has dropped to 1.5GB and 1.75 System load (5min) - 
  
  <entry>
    <title>Barriers to TDD</title>
-   <link href="http://www.tech-d.net/2013/04/25/barriers-to-tdd/"/>
+   <link href="http://www.container42.com/2013/04/25/barriers-to-tdd/"/>
    <updated>2013-04-25T16:33:50+00:00</updated>
-   <id>http://www.tech-d.net/2013/04/25/barriers-to-tdd</id>
+   <id>http://www.container42.com/2013/04/25/barriers-to-tdd</id>
    <content type="html">&lt;p&gt;Any, and hopefully every, developer has probably heard the TDD mantra. I only had to hear it once to know it was the way to go, I&amp;#39;m sure others had to have it repeated over and over before they got it that it really is a better way to do development. If you haven&amp;#39;t reached that point yet I&amp;#39;m sure I know a few people with bats and crowbars who can beat it into you some more until you agree too! ;)&lt;/p&gt;
 
 &lt;p&gt;Knowing is only half the battle, there are other, seemingly much larger, barriers to entry:&lt;/p&gt;
@@ -909,9 +2141,9 @@ _For people reading this who don&amp;#39;t do testing, check out these to get st
  
  <entry>
    <title>Remembering Steve</title>
-   <link href="http://www.tech-d.net/apple/2011/10/11/remembering-steve/"/>
+   <link href="http://www.container42.com/apple/2011/10/11/remembering-steve/"/>
    <updated>2011-10-11T16:18:45+00:00</updated>
-   <id>http://www.tech-d.net/apple/2011/10/11/remembering-steve</id>
+   <id>http://www.container42.com/apple/2011/10/11/remembering-steve</id>
    <content type="html">&lt;p&gt;I remember Steve, not personally, or from the gadgets that he helped to create, which I love and use daily.&lt;/p&gt;
 
 &lt;p&gt;I remember Steve as a man who was not afraid to be a leader.&lt;/p&gt;

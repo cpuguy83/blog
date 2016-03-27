@@ -11,7 +11,7 @@
 
   <title>
     
-      Tech'd &middot; Stuff I find interesting
+      Container42 &middot; Stuff I find interesting
     
   </title>
 
@@ -51,9 +51,13 @@ ga('send', 'pageview');
       <div class="masthead">
         <div class="container">
           <h3 class="masthead-title">
-            <a href="/" title="Home">Tech'd</a>
+            <a href="/" title="Home">Container42</a>
             <small>Stuff I find interesting</small>
           </h3>
+            <span display="float:right">
+              <a href="https://twitter.com/cpuguy83"><small>Twitter</small></a>
+              <a href="https://github.com/cpuguy83"><small>GitHub</small></a>
+            </span>
         </div>
       </div>
 
@@ -62,56 +66,93 @@ ga('send', 'pageview');
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/2013/06/18/threaded-ruby-in-production-rbx-edition/">
-        Threaded Ruby in Production - Rbx edition
+      <a href="/2014/07/03/libswarm/">
+        Libswarm (in a nutshell)
       </a>
     </h1>
 
-    <span class="post-date">18 Jun 2013</span>
+    <span class="post-date">03 Jul 2014</span>
 
-    <p>At enVu we use Ruby and Rails to bring together various pieces of 3rd party software to make them integrate a bit better with our business requirements.</p>
+    <p>At Dockercon, Docker announced a new project being worked on called <code>libswarm</code>.</p>
+
+<p>I wanted to clarify what exactly libswarm is, what it does, and what it doesn&#39;t do.</p>
 
 
     
-      <a href="/2013/06/18/threaded-ruby-in-production-rbx-edition/">read more</a>
+      <a href="/2014/07/03/libswarm/">read more</a>
     
   </div>
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/2013/04/25/barriers-to-tdd/">
-        Barriers to TDD
+      <a href="/2014/05/05/docker-quicktip-5-backing-up-volumes/">
+        Docker Quicktip #5: Backing up Volumes
       </a>
     </h1>
 
-    <span class="post-date">25 Apr 2013</span>
+    <span class="post-date">05 May 2014</span>
 
-    <p>Any, and hopefully every, developer has probably heard the TDD mantra. I only had to hear it once to know it was the way to go, I&#39;m sure others had to have it repeated over and over before they got it that it really is a better way to do development. If you haven&#39;t reached that point yet I&#39;m sure I know a few people with bats and crowbars who can beat it into you some more until you agree too! ;)</p>
+    <p>Data in Docker volumes is generally super important.  In fact if you are doing your containers correctly the stuff in the volumes is the only thing you need to worry about backing up as containers shouldn&#39;t be storing anything at all.</p>
 
-<p>Knowing is only half the battle, there are other, seemingly much larger, barriers to entry:</p>
+<p>So how do you access the data in volumes?</p>
 
 
     
-      <a href="/2013/04/25/barriers-to-tdd/">read more</a>
+      <a href="/2014/05/05/docker-quicktip-5-backing-up-volumes/">read more</a>
     
   </div>
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/apple/2011/10/11/remembering-steve/">
-        Remembering Steve
+      <a href="/2014/03/29/docker-quicktip-4-remote-volumes/">
+        Docker Quicktip #4 - Remote volumes
       </a>
     </h1>
 
-    <span class="post-date">11 Oct 2011</span>
+    <span class="post-date">29 Mar 2014</span>
 
-    <p>I remember Steve, not personally, or from the gadgets that he helped to create, which I love and use daily.</p>
+    <p>This one builds off the idea of using <a href="http://www.tech-d.net/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/" title="Persistent volumes with Docker – Data-only container pattern">data-only containers</a>.  Let&#39;s step into the unknown and add a second host into the mix.</p>
 
-<p>I remember Steve as a man who was not afraid to be a leader.</p>
+<p>What do you use when you need to share data with containers across hosts?
+The answer?  Well... as you normally would... NFS (or insert your file share service of choice).</p>
 
 
     
-      <a href="/apple/2011/10/11/remembering-steve/">read more</a>
+      <a href="/2014/03/29/docker-quicktip-4-remote-volumes/">read more</a>
+    
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="/2014/02/06/docker-quicktip-3-onbuild/">
+        Docker quicktip #3 - ONBUILD
+      </a>
+    </h1>
+
+    <span class="post-date">06 Feb 2014</span>
+
+    <p>Docker 0.8 came out today, with it a slew of fantastic enhancements.  Today we&#39;ll be looking at one of them: <code>ONBUILD</code>.</p>
+
+
+    
+      <a href="/2014/02/06/docker-quicktip-3-onbuild/">read more</a>
+    
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="/2014/01/27/docker-quicktip-2-exec-it/">
+        Docker Quicktip #2: exec it, please!
+      </a>
+    </h1>
+
+    <span class="post-date">27 Jan 2014</span>
+
+    <p>Often when creating a Docker container it is necessary to do a bit of setup before starting the main process you wanted. Sometimes this is just a one-time setup for the first time the container starts (setting up database users, importing data, etc), other times it&#39;s setting up the environment to get your process going (as many init.d scripts also do). In any case some script is needed to run before running the main application that the container was created for.</p>
+
+
+    
+      <a href="/2014/01/27/docker-quicktip-2-exec-it/">read more</a>
     
   </div>
   
@@ -119,7 +160,7 @@ ga('send', 'pageview');
 
 <div class="pagination">
   
-    <span class="pagination-item older">Older</span>
+    <a class="pagination-item older" href="/page4">Older</a>
   
   
     
