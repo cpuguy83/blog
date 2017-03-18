@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
  <title>Container42</title>
- <link href="http://www.container42.com/atom.xml" rel="self"/>
- <link href="http://www.container42.com/"/>
- <updated>2016-03-27T17:12:31+00:00</updated>
- <id>http://www.container42.com</id>
+ <link href="https://www.container42.com/atom.xml" rel="self"/>
+ <link href="https://www.container42.com/"/>
+ <updated>2017-03-18T22:28:20+00:00</updated>
+ <id>https://www.container42.com</id>
  <author>
    <name>Brian Goff</name>
    <email>cpuguy83@gmail.com</email>
@@ -13,10 +13,10 @@
 
  
  <entry>
-   <title>Docker Quicktip #6: docker ps --format</title>
-   <link href="http://www.container42.com/2016/03/27/docker-quicktip-6-psformat/"/>
+   <title>Docker Quicktip #7: docker ps --format</title>
+   <link href="https://www.container42.com/2016/03/27/docker-quicktip-7-psformat/"/>
    <updated>2016-03-27T12:00:00+00:00</updated>
-   <id>http://www.container42.com/2016/03/27/docker-quicktip-6-psformat</id>
+   <id>https://www.container42.com/2016/03/27/docker-quicktip-7-psformat</id>
    <content type="html">&lt;p&gt;It&amp;#39;s been awhile since I did a quick Docker tip, so I figured I should go ahead
 and share one that I know many people will get use out of.&lt;/p&gt;
 
@@ -63,7 +63,7 @@ don&amp;#39;t have to type the same thing in every time, nor have to constantly 
 your terminal, while still being able to override the format from the CLI?&lt;/p&gt;
 
 &lt;p&gt;By default, Docker looks for a config file in &lt;code&gt;~/.docker/config.json&lt;/code&gt;. It stores
-some settings here, like auth credentials (which in Docker 1.11 you you&amp;#39;ll be
+some settings here, like auth credentials (which in Docker 1.11 you will be
 able to move auth creds elsewhere... more on that in a later post). It can also
 store a custom format for &lt;code&gt;docker ps&lt;/code&gt;.&lt;/p&gt;
 
@@ -81,7 +81,7 @@ prod_hipache_1          cpuguy83/configs:hipache       4 months ago        Up 3 
 prod_hipacheredis_1     redis                          4 months ago        Up 3 days           &amp;quot;/entrypoint.sh redis&amp;quot;
 prod_blogwww_1          cpuguy83/blog                  4 months ago        Up 3 days           &amp;quot;nginx&amp;quot;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;You can also do the same for &lt;code&gt;docker iamges&lt;/code&gt;:&lt;/p&gt;
+&lt;p&gt;You can also do the same for &lt;code&gt;docker images&lt;/code&gt;:&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
   &lt;span class=&quot;nt&quot;&gt;&amp;quot;psFormat&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;table {{.Names}}\\t{{.Image}}\\t{{.RunningFor}} ago\\t{{.Status}}\\t{{.Command}}&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
   &lt;span class=&quot;nt&quot;&gt;&amp;quot;imagesFormat&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;table {{.Repository}}\\t{{.Tag}}\\t{{.ID}}\\t{{.Size}}&amp;quot;&lt;/span&gt;
@@ -94,9 +94,9 @@ for more docs on formatting options for different commands.&lt;/p&gt;
  
  <entry>
    <title>Docker Networking: Reborn</title>
-   <link href="http://www.container42.com/2015/10/30/docker-networking-reborn/"/>
+   <link href="https://www.container42.com/2015/10/30/docker-networking-reborn/"/>
    <updated>2015-10-30T16:00:00+00:00</updated>
-   <id>http://www.container42.com/2015/10/30/docker-networking-reborn</id>
+   <id>https://www.container42.com/2015/10/30/docker-networking-reborn</id>
    <content type="html">&lt;p&gt;Forget everything you thought knew about Docker networking. It&amp;#39;s all changed,
 brand new and shiney, and yet oddly familiar.
 Docker 1.9 is coming and it will change the way you do container networking.&lt;/p&gt;
@@ -533,9 +533,9 @@ still more to come!  &lt;/p&gt;
  
  <entry>
    <title>Experimenting with Native Docker tooling</title>
-   <link href="http://www.container42.com/2015/09/15/experimenting-with-native-docker-tooling/"/>
+   <link href="https://www.container42.com/2015/09/15/experimenting-with-native-docker-tooling/"/>
    <updated>2015-09-15T12:00:00+00:00</updated>
-   <id>http://www.container42.com/2015/09/15/experimenting-with-native-docker-tooling</id>
+   <id>https://www.container42.com/2015/09/15/experimenting-with-native-docker-tooling</id>
    <content type="html">&lt;p&gt;Using Docker over the last two years has been a wonderful experience. It is not
 always perfect. I&amp;#39;ve certainly had to write new tools (and use other&amp;#39;s tools) to
 deal with a missing or not-fully-baked features for my own needs. However, this
@@ -717,9 +717,9 @@ a shot for yourself!&lt;/p&gt;
  
  <entry>
    <title>Docker logging</title>
-   <link href="http://www.container42.com/2015/04/16/docker-logging/"/>
+   <link href="https://www.container42.com/2015/04/16/docker-logging/"/>
    <updated>2015-04-16T20:00:00+00:00</updated>
-   <id>http://www.container42.com/2015/04/16/docker-logging</id>
+   <id>https://www.container42.com/2015/04/16/docker-logging</id>
    <content type="html">&lt;p&gt;Logging in Docker has always been quite convenient for a developer. Send your
 logs to stdout/stderr and Docker picks them up, you can view them with
 &lt;code&gt;docker logs&lt;/code&gt;. This command lets you tail the logs, follow them, etc. It can be
@@ -792,9 +792,9 @@ pretty simple to implement your own!&lt;/p&gt;
  
  <entry>
    <title>Data-only container madness</title>
-   <link href="http://www.container42.com/2014/11/18/data-only-container-madness/"/>
+   <link href="https://www.container42.com/2014/11/18/data-only-container-madness/"/>
    <updated>2014-11-18T10:00:00+00:00</updated>
-   <id>http://www.container42.com/2014/11/18/data-only-container-madness</id>
+   <id>https://www.container42.com/2014/11/18/data-only-container-madness</id>
    <content type="html">&lt;p&gt;Data-only containers are a pattern for managing your docker volumes with
 containers instead of manually with host-mounted volumes. For more info on the
 pattern, see
@@ -936,9 +936,9 @@ is actually for.&lt;/p&gt;
  
  <entry>
    <title>Docker In-depth: Volumes</title>
-   <link href="http://www.container42.com/2014/11/03/docker-indepth-volumes/"/>
+   <link href="https://www.container42.com/2014/11/03/docker-indepth-volumes/"/>
    <updated>2014-11-03T11:00:00+00:00</updated>
-   <id>http://www.container42.com/2014/11/03/docker-indepth-volumes</id>
+   <id>https://www.container42.com/2014/11/03/docker-indepth-volumes</id>
    <content type="html">&lt;p&gt;One of the most common roadblocks for people using Docker, and indeed easily the
 most common questions I see on on various Docker support channels, is regarding
 the use of volumes.&lt;/p&gt;
@@ -1088,9 +1088,9 @@ something being worked on but is not yet merged
  
  <entry>
    <title>Docker Quicktip #6: Restart Policies</title>
-   <link href="http://www.container42.com/2014/09/30/docker-restart-policies/"/>
+   <link href="https://www.container42.com/2014/09/30/docker-restart-policies/"/>
    <updated>2014-09-30T11:00:00+00:00</updated>
-   <id>http://www.container42.com/2014/09/30/docker-restart-policies</id>
+   <id>https://www.container42.com/2014/09/30/docker-restart-policies</id>
    <content type="html">&lt;p&gt;Docker 1.2 introduced a powerful new feature called &amp;quot;restart policies&amp;quot;.
 Restart policies replaces the old daemon &amp;quot;-r&amp;quot; option, which itself would try to
 restart all previously running containers upon daemon restart, however this was
@@ -1144,9 +1144,9 @@ doing it wrong.&lt;/p&gt;
  
  <entry>
    <title>Docker Grand Ambassador</title>
-   <link href="http://www.container42.com/2014/08/28/docker-grand-ambassador/"/>
+   <link href="https://www.container42.com/2014/08/28/docker-grand-ambassador/"/>
    <updated>2014-08-28T15:15:00+00:00</updated>
-   <id>http://www.container42.com/2014/08/28/docker-grand-ambassador</id>
+   <id>https://www.container42.com/2014/08/28/docker-grand-ambassador</id>
    <content type="html">&lt;p&gt;In Docker, when you want two containers to be able to discover each other and
 communicate, you use links... Or at least when you first started you did and
 and then you gave up because links don&amp;#39;t work well right now.&lt;/p&gt;
@@ -1233,9 +1233,9 @@ full-blown app which does not exit like the &lt;code&gt;redis-cli -h db ping&lt;
  
  <entry>
    <title>DockerHub in dev-test Workflow</title>
-   <link href="http://www.container42.com/2014/07/31/dockerhub-in-dev-test-workflow/"/>
+   <link href="https://www.container42.com/2014/07/31/dockerhub-in-dev-test-workflow/"/>
    <updated>2014-07-31T21:24:19+00:00</updated>
-   <id>http://www.container42.com/2014/07/31/dockerhub-in-dev-test-workflow</id>
+   <id>https://www.container42.com/2014/07/31/dockerhub-in-dev-test-workflow</id>
    <content type="html">&lt;p&gt;When DockerHub was announced there was a really handy feature added that you may have missed: Webhooks.&lt;/p&gt;
 
 &lt;p&gt;With DockerHub you can setup a webhook to call out to an external service once a successful push of a particular image is made (this includes completion of automated builds).&lt;/p&gt;
@@ -1319,9 +1319,9 @@ full-blown app which does not exit like the &lt;code&gt;redis-cli -h db ping&lt;
  
  <entry>
    <title>libswarm demotime - logging</title>
-   <link href="http://www.container42.com/2014/07/17/libswarm-demotime-logging/"/>
+   <link href="https://www.container42.com/2014/07/17/libswarm-demotime-logging/"/>
    <updated>2014-07-17T20:09:12+00:00</updated>
-   <id>http://www.container42.com/2014/07/17/libswarm-demotime-logging</id>
+   <id>https://www.container42.com/2014/07/17/libswarm-demotime-logging</id>
    <content type="html">&lt;p&gt;If you don&amp;#39;t know what libswarm is take a gander at &lt;a href=&quot;http://www.tech-d.net/2014/07/03/libswarm/&quot; title=&quot;Libswarm (in a nutshell)&quot;&gt;Libswarm in a nutshell&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;Just a quick demo showing off what libswarm can do with logging.&lt;/p&gt;
@@ -1383,9 +1383,9 @@ Getting logs tcp://10.0.0.3:2375 [hopeful_babbage]
  
  <entry>
    <title>Libswarm (in a nutshell)</title>
-   <link href="http://www.container42.com/2014/07/03/libswarm/"/>
+   <link href="https://www.container42.com/2014/07/03/libswarm/"/>
    <updated>2014-07-03T14:05:47+00:00</updated>
-   <id>http://www.container42.com/2014/07/03/libswarm</id>
+   <id>https://www.container42.com/2014/07/03/libswarm</id>
    <content type="html">&lt;p&gt;At Dockercon, Docker announced a new project being worked on called &lt;code&gt;libswarm&lt;/code&gt;.&lt;/p&gt;
 
 &lt;p&gt;I wanted to clarify what exactly libswarm is, what it does, and what it doesn&amp;#39;t do.&lt;/p&gt;
@@ -1475,9 +1475,9 @@ Getting logs tcp://10.0.0.3:2375 [hopeful_babbage]
  
  <entry>
    <title>Docker Quicktip #5: Backing up Volumes</title>
-   <link href="http://www.container42.com/2014/05/05/docker-quicktip-5-backing-up-volumes/"/>
+   <link href="https://www.container42.com/2014/05/05/docker-quicktip-5-backing-up-volumes/"/>
    <updated>2014-05-05T14:48:25+00:00</updated>
-   <id>http://www.container42.com/2014/05/05/docker-quicktip-5-backing-up-volumes</id>
+   <id>https://www.container42.com/2014/05/05/docker-quicktip-5-backing-up-volumes</id>
    <content type="html">&lt;p&gt;Data in Docker volumes is generally super important.  In fact if you are doing your containers correctly the stuff in the volumes is the only thing you need to worry about backing up as containers shouldn&amp;#39;t be storing anything at all.&lt;/p&gt;
 
 &lt;p&gt;So how do you access the data in volumes?&lt;/p&gt;
@@ -1544,9 +1544,9 @@ docker run -d &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quo
  
  <entry>
    <title>Docker Quicktip #4 - Remote volumes</title>
-   <link href="http://www.container42.com/2014/03/29/docker-quicktip-4-remote-volumes/"/>
+   <link href="https://www.container42.com/2014/03/29/docker-quicktip-4-remote-volumes/"/>
    <updated>2014-03-29T22:21:40+00:00</updated>
-   <id>http://www.container42.com/2014/03/29/docker-quicktip-4-remote-volumes</id>
+   <id>https://www.container42.com/2014/03/29/docker-quicktip-4-remote-volumes</id>
    <content type="html">&lt;p&gt;This one builds off the idea of using &lt;a href=&quot;http://www.tech-d.net/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/&quot; title=&quot;Persistent volumes with Docker – Data-only container pattern&quot;&gt;data-only containers&lt;/a&gt;.  Let&amp;#39;s step into the unknown and add a second host into the mix.&lt;/p&gt;
 
 &lt;p&gt;What do you use when you need to share data with containers across hosts?
@@ -1586,9 +1586,9 @@ foo
  
  <entry>
    <title>Docker quicktip #3 - ONBUILD</title>
-   <link href="http://www.container42.com/2014/02/06/docker-quicktip-3-onbuild/"/>
+   <link href="https://www.container42.com/2014/02/06/docker-quicktip-3-onbuild/"/>
    <updated>2014-02-06T11:41:10+00:00</updated>
-   <id>http://www.container42.com/2014/02/06/docker-quicktip-3-onbuild</id>
+   <id>https://www.container42.com/2014/02/06/docker-quicktip-3-onbuild</id>
    <content type="html">&lt;p&gt;Docker 0.8 came out today, with it a slew of fantastic enhancements.  Today we&amp;#39;ll be looking at one of them: &lt;code&gt;ONBUILD&lt;/code&gt;.&lt;/p&gt;
 
 &lt;!--break--&gt;
@@ -1786,9 +1786,9 @@ Successfully built b78c1813bd44
  
  <entry>
    <title>Docker Quicktip #2: exec it, please!</title>
-   <link href="http://www.container42.com/2014/01/27/docker-quicktip-2-exec-it/"/>
+   <link href="https://www.container42.com/2014/01/27/docker-quicktip-2-exec-it/"/>
    <updated>2014-01-27T14:26:37+00:00</updated>
-   <id>http://www.container42.com/2014/01/27/docker-quicktip-2-exec-it</id>
+   <id>https://www.container42.com/2014/01/27/docker-quicktip-2-exec-it</id>
    <content type="html">&lt;p&gt;Often when creating a Docker container it is necessary to do a bit of setup before starting the main process you wanted. Sometimes this is just a one-time setup for the first time the container starts (setting up database users, importing data, etc), other times it&amp;#39;s setting up the environment to get your process going (as many init.d scripts also do). In any case some script is needed to run before running the main application that the container was created for.&lt;/p&gt;
 
 &lt;!--break--&gt;
@@ -1856,9 +1856,9 @@ su postgres -c &lt;span class=&quot;s2&quot;&gt;&amp;quot;/usr/lib/postgresql/9.
  
  <entry>
    <title>Docker Quicktip #1: Entrypoint</title>
-   <link href="http://www.container42.com/2014/01/27/docker-quicktip-1-entrypoint/"/>
+   <link href="https://www.container42.com/2014/01/27/docker-quicktip-1-entrypoint/"/>
    <updated>2014-01-27T02:51:50+00:00</updated>
-   <id>http://www.container42.com/2014/01/27/docker-quicktip-1-entrypoint</id>
+   <id>https://www.container42.com/2014/01/27/docker-quicktip-1-entrypoint</id>
    <content type="html">&lt;p&gt;The first tip is aptly named &amp;quot;Entrypoint&amp;quot;. In this tips I kind of expect that you&amp;#39;ve played around with Docker a bit, probably even have some containers running for your dev environment.  So, in short, if you haven&amp;#39;t played yet, go play and come back!&lt;/p&gt;
 
 &lt;!--break--&gt;
@@ -1890,9 +1890,9 @@ docker run -i -t -rm me/echo bar
  
  <entry>
    <title>Persistent volumes with Docker - Data-only container pattern</title>
-   <link href="http://www.container42.com/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/"/>
+   <link href="https://www.container42.com/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern/"/>
    <updated>2013-12-16T16:32:42+00:00</updated>
-   <id>http://www.container42.com/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern</id>
+   <id>https://www.container42.com/2013/12/16/persistent-volumes-with-docker-container-as-volume-pattern</id>
    <content type="html">&lt;p&gt;Docker has an option to allow specific folders in a container to be mapped to
 the normal filesystem on the host.  This allows us to have data in the container
 without making the data part of the Docker image, and without being bound to
@@ -1970,9 +1970,9 @@ Try it out!&lt;/p&gt;
  
  <entry>
    <title>Burn Brighter</title>
-   <link href="http://www.container42.com/social/2013/08/11/burn-brighter/"/>
+   <link href="https://www.container42.com/social/2013/08/11/burn-brighter/"/>
    <updated>2013-08-11T02:37:51+00:00</updated>
-   <id>http://www.container42.com/social/2013/08/11/burn-brighter</id>
+   <id>https://www.container42.com/social/2013/08/11/burn-brighter</id>
    <content type="html">&lt;p&gt;Nearly 12 years ago President George W. Bush, standing in the rubble of the World Trade Center, proclaimed on his megaphone that the unspeakable act of terrorism was carried out on the brightest beacon of freedom in the world.&lt;/p&gt;
 
 &lt;!--break--&gt;
@@ -2009,9 +2009,9 @@ Try it out!&lt;/p&gt;
  
  <entry>
    <title>Threaded Ruby in Production - Rbx edition</title>
-   <link href="http://www.container42.com/2013/06/18/threaded-ruby-in-production-rbx-edition/"/>
+   <link href="https://www.container42.com/2013/06/18/threaded-ruby-in-production-rbx-edition/"/>
    <updated>2013-06-18T02:12:00+00:00</updated>
-   <id>http://www.container42.com/2013/06/18/threaded-ruby-in-production-rbx-edition</id>
+   <id>https://www.container42.com/2013/06/18/threaded-ruby-in-production-rbx-edition</id>
    <content type="html">&lt;p&gt;At enVu we use Ruby and Rails to bring together various pieces of 3rd party software to make them integrate a bit better with our business requirements.&lt;/p&gt;
 
 &lt;!--break--&gt;
@@ -2048,9 +2048,9 @@ With Rubinius that RAM usage has dropped to 1.5GB and 1.75 System load (5min) - 
  
  <entry>
    <title>Barriers to TDD</title>
-   <link href="http://www.container42.com/2013/04/25/barriers-to-tdd/"/>
+   <link href="https://www.container42.com/2013/04/25/barriers-to-tdd/"/>
    <updated>2013-04-25T16:33:50+00:00</updated>
-   <id>http://www.container42.com/2013/04/25/barriers-to-tdd</id>
+   <id>https://www.container42.com/2013/04/25/barriers-to-tdd</id>
    <content type="html">&lt;p&gt;Any, and hopefully every, developer has probably heard the TDD mantra. I only had to hear it once to know it was the way to go, I&amp;#39;m sure others had to have it repeated over and over before they got it that it really is a better way to do development. If you haven&amp;#39;t reached that point yet I&amp;#39;m sure I know a few people with bats and crowbars who can beat it into you some more until you agree too! ;)&lt;/p&gt;
 
 &lt;p&gt;Knowing is only half the battle, there are other, seemingly much larger, barriers to entry:&lt;/p&gt;
@@ -2135,15 +2135,15 @@ _For people reading this who don&amp;#39;t do testing, check out these to get st
 &lt;li&gt;If you want to see how a method responds, write a failing test so you can see it.. and stay out of the console&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;Check out &lt;a href=&quot;https://twitter.com/search?q=%23pairwithme&amp;amp;amp;src=hash&quot; title=&quot;#pairwithme&quot;&gt;#pairwithme&lt;/a&gt; on twitter and &lt;a href=&quot;http://www.pairprogramwith.me&quot;&gt;http://www.pairprogramwith.me&lt;/a&gt; and pair with someone!&lt;/p&gt;
+&lt;p&gt;Check out &lt;a href=&quot;https://twitter.com/search?q=%23pairwithme&amp;amp;src=hash&quot; title=&quot;#pairwithme&quot;&gt;#pairwithme&lt;/a&gt; on twitter and &lt;a href=&quot;http://www.pairprogramwith.me&quot;&gt;http://www.pairprogramwith.me&lt;/a&gt; and pair with someone!&lt;/p&gt;
 </content>
  </entry>
  
  <entry>
    <title>Remembering Steve</title>
-   <link href="http://www.container42.com/apple/2011/10/11/remembering-steve/"/>
+   <link href="https://www.container42.com/apple/2011/10/11/remembering-steve/"/>
    <updated>2011-10-11T16:18:45+00:00</updated>
-   <id>http://www.container42.com/apple/2011/10/11/remembering-steve</id>
+   <id>https://www.container42.com/apple/2011/10/11/remembering-steve</id>
    <content type="html">&lt;p&gt;I remember Steve, not personally, or from the gadgets that he helped to create, which I love and use daily.&lt;/p&gt;
 
 &lt;p&gt;I remember Steve as a man who was not afraid to be a leader.&lt;/p&gt;
