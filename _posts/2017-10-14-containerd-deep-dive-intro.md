@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 'ContainerD Deep Dive: Intro to ContainerD'
+title: 'containerD Deep Dive: Intro to ContainerD'
 date: 2017-10-14 16:00
 tags:
 - Docker
@@ -14,7 +14,7 @@ author:
   last_name: Goff
 ---
 
-You may have heard a lot about ContainerD recently, but did you know you've
+You may have heard a lot about containerD recently, but did you know you've
 probably been using it for over a year?
 
 This series will take a deep dive into what's new with ContainerD, its origins,
@@ -24,11 +24,11 @@ any why you should care.
 
 ### Origins
 
-ContainerD began its life as a component of Docker 1.11 when it replaced
+containerD began its life as a component of Docker 1.11 when it replaced
 Docker Engine's built-in container execution model as an external component.
 With containerD, Docker Engine gained support for the early draft OCI specs
 which means it became relatively trivial to add support for new execution
-environments without having to change the main Docker codebase. ContainerD was
+environments without having to change the main Docker codebase. containerD was
 built to execute containers efficiently with whatever OCI compatible runtime
 the user wanted to use. The introduction of containerD also came with being
 able to
@@ -46,7 +46,7 @@ including distribution, storage, networking, and other tasks. After much time
 was spent thinking and discussing with the community what was really needed, the
 containerD 1.0 project was kicked off.
 
-### ContainerD 1.0
+### containerD 1.0
 
 So what is containerD 1.0 all about? In short, it's a new container runtime built
 with no baggage, four years worth of hindsight, and a well defined scope.
