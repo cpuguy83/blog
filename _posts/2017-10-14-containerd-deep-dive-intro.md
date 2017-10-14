@@ -123,15 +123,20 @@ capabilities, etc.
 
 ----
 
-ContainerD 1.0 makes use of a heavy-client model where containerD itself doesn't
+containerD 1.0 makes use of a heavy-client model where containerD itself doesn't
 impose many opinions but rather the functionality for the client to make its
-own opinion.
+own opinion. This comes at a trade-off of putting more work on client builders
+to implement their own features.
 
 While containerD does use GRPC as an API, and thus anyone can generate their
 own client, it also provides an unopinionated client implementation for Go which
 does not require dealing with the GRPC layer itself.
 
 Here is a code-snippet using the provided go client to run a redis container:
+
+*note:* This example is intentionally using mostly defaults and letting the client
+make a lot of choices for us, in a follow-up we'll go through just how much you
+can do.
 
 ```go
 	client, _ := containerd.New("/run/containerd.sock")
