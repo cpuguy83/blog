@@ -39,8 +39,8 @@ of complicated, platform dependent code from dockerd.
 So this thing has been around for awhile, why should you care? With the Docker
 Engine moving further up the stack with things like multi-host networking,
 service discovery, and swarm-mode orchestration it became clear that both within
-Docker and in the greater community that there was a need for somethign more than
-what containerD offered and yet much less than what Docker engine offered and
+Docker and in the greater community that there was a need for something more than
+what containerD offered and yet much less than what Docker engine provides, and
 with fewer opinions.
 There is a lot more effort in managing containers than just the execution of them,
 including distribution, storage, networking, and other tasks. After much time
@@ -68,10 +68,10 @@ unstable, but because the API's are not stabilized, and even the spec it depends
 on (OCI runtime spec) was only recently brought to 1.0. Docker deals with any
 API breakages in containerD internally and the user is not concerned with it.
 
-Along with the "1.0" version containerD project is also defining a sensible
+Along with the "1.0" version, the containerD project is also defining a sensible
 [support timeline](https://github.com/containerd/containerd/blob/master/RELEASES.md#support-horizon)
 for releases.
-Along with this, Docker has
+Docker has also
 [donated containerD to the CNCF](https://www.cncf.io/announcement/2017/03/29/containerd-joins-cloud-native-computing-foundation/).
 
 So what do these services look like? Here's a high-level view, we'll go deeper
@@ -204,6 +204,18 @@ can do.
 	}
 	os.Exit(code)
 ```
+
+Work is [on-going](https://github.com/moby/moby/pull/34895) to move Docker to
+containerD 1.0, likely with a slow move to have Docker use more and more of
+containerD's services.
+You can also try out containerD with Kubernetes with
+[cri-containerd](https://github.com/kubernetes-incubator/cri-containerd/releases).
+If you've tried out [linuxkit](https://github.com/linuxkit/linuxkit) you've
+already used the new containerD!
+
+*Note*: containerD 1.0 is currently in the beta stage, check out the
+[releases](https://github.com/containerd/containerd/releases) page to track its
+progress.
 
 There's much more detail to go into here, so look forward to more posts about
 containerD.
