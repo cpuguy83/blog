@@ -1,11 +1,11 @@
 ---
 layout: post
-title: 'containerD Deep Dive: Intro to containerD'
+title: 'containerd Deep Dive: Intro to containerd'
 date: 2017-10-14 16:00
 tags:
 - Docker
 - Containers
-- containerD
+- containerd
 status: publish
 type: post
 published: true
@@ -15,23 +15,23 @@ author:
   last_name: Goff
 ---
 
-You may have heard a lot about containerD recently, but did you know you've
+You may have heard a lot about containerd recently, but did you know you've
 probably been using it for over a year?
 
-This series will take a deep dive into what's new with containerD, its origins,
+This series will take a deep dive into what's new with containerd, its origins,
 any why you should care.
 
 <!--break-->
 
 ### Origins
 
-containerD began its life as a component of Docker 1.11 when it replaced
+containerd began its life as a component of Docker 1.11 when it replaced
 Docker Engine's built-in container execution model as an external component.
-With containerD, Docker Engine gained support for the early draft OCI specs
+With containerd, Docker Engine gained support for the early draft OCI specs
 which means it became relatively trivial to add support for new execution
-environments without having to change the main Docker codebase. containerD was
+environments without having to change the main Docker codebase. containerd was
 built to execute containers efficiently with whatever OCI compatible runtime
-the user wanted to use. The introduction of containerD also came with being
+the user wanted to use. The introduction of containerd also came with being
 able to
 [delete a large swath](https://github.com/moby/moby/pull/20662/commits/6eebe85290327ee9934ea996b6ef82c579789d97)
 of complicated, platform dependent code from dockerd.
@@ -40,39 +40,39 @@ So this thing has been around for awhile, why should you care? With the Docker
 Engine moving further up the stack with things like multi-host networking,
 service discovery, and swarm-mode orchestration it became clear that both within
 Docker and in the greater community that there was a need for something more than
-what containerD offered and yet much less than what Docker engine provides, and
+what containerd offered and yet much less than what Docker engine provides, and
 with fewer opinions.
 There is a lot more effort in managing containers than just the execution of them,
 including distribution, storage, networking, and other tasks. After much time
 was spent thinking and discussing with the community what was really needed, the
-containerD 1.0 project was kicked off.
+containerd 1.0 project was kicked off.
 
-### containerD 1.0
+### containerd 1.0
 
-So what is containerD 1.0 all about? In short, it's a new container runtime
+So what is containerd 1.0 all about? In short, it's a new container runtime
 built with no baggage, four years worth of hindsight, and a well defined scope.
 It's designed to be wrapped, easily integrated with, and customizable meanwhile
-providing the right functionality so that consumers of containerD don't have to
+providing the right functionality so that consumers of containerd don't have to
 re-implement a lot of the same functionality. It provides a base set of (GRPC)
 services backed by implementations which are fully pluggable, either via
 compiled in plugins or using go 1.8's dynamic plugin model (nothing to do with
 Docker style plugins).
-None of the containerD services are strongly coupled, so you can choose to use
+None of the containerd services are strongly coupled, so you can choose to use
 one piece and not another, and combine them in whatever way that your integration
 demands.
 
-One thing you might ask is why "1.0"? The most recent release of containerD, and
+One thing you might ask is why "1.0"? The most recent release of containerd, and
 the one that's currently shipping with Docker (as of Docker CE 17.09), is from
-the v0.2.x tree of containerD. It's not "v0.2" because the software itself is
+the v0.2.x tree of containerd. It's not "v0.2" because the software itself is
 unstable, but because the API's are not stabilized, and even the spec it depends
 on (OCI runtime spec) was only recently brought to 1.0. Docker deals with any
-API breakages in containerD internally and the user is not concerned with it.
+API breakages in containerd internally and the user is not concerned with it.
 
-Along with the "1.0" version, the containerD project is also defining a sensible
+Along with the "1.0" version, the containerd project is also defining a sensible
 [support timeline](https://github.com/containerd/containerd/blob/master/RELEASES.md#support-horizon)
 for releases.
 Docker has also
-[donated containerD to the CNCF](https://www.cncf.io/announcement/2017/03/29/containerd-joins-cloud-native-computing-foundation/).
+[donated containerd to the CNCF](https://www.cncf.io/announcement/2017/03/29/containerd-joins-cloud-native-computing-foundation/).
 
 So what do these services look like? Here's a high-level view, we'll go deeper
 into each service in subsequent posts in this series.  
@@ -112,13 +112,13 @@ The diff service generates and applies diffs between filesystem mounts.
 
 #### Images
 
-The image service provides access to the images stored in containerD. An image
+The image service provides access to the images stored in containerd. An image
 is really just metadata with references to the content stored in the content
 store.
 
 #### Containers
 
-The container service provides access to the containers in containerD. Unlike
+The container service provides access to the containers in containerd. Unlike
 Docker, a container is just a metadata object. If you create a container, you
 are only creating metadata. A `Container` is a parent of a `Task`
 
@@ -138,20 +138,20 @@ other things.
 
 #### Introspection
 
-The introspection service provides details about the running containerD instance.
+The introspection service provides details about the running containerd instance.
 A client can, for example, use this to find out about loaded plugins, their
 capabilities, etc.
 
 ----
 
-containerD 1.0 makes use of a rich-client model where containerD itself doesn't
+containerd 1.0 makes use of a rich-client model where containerd itself doesn't
 impose many opinions but rather the functionality for the client to make its
 own opinion. This comes at a trade-off of putting more work on client builders
 to implement their own features.
 
 Just as an example of what "rich-client" means, here is an example of how an
-image would get created in containerD from a registry. Take note that the pull
-operation (and push for that matter) is all client side and uses containerD
+image would get created in containerd from a registry. Take note that the pull
+operation (and push for that matter) is all client side and uses containerd
 services to store the content and unpack onto a filesystem.
 
 [![containerd-dataflow-pull](/assets/containerd-dataflow-pull.png)](/assets/containerd-dataflow-pull.png)
@@ -159,7 +159,7 @@ services to store the content and unpack onto a filesystem.
 *graphics courtesy of [Stephen Day](https://github.com/stevvooe)*
 
 
-While containerD does use GRPC as an API, and thus anyone can generate their
+While containerd does use GRPC as an API, and thus anyone can generate their
 own client, it also provides an unopinionated, rich Go client implementation
 which does not require dealing with the GRPC layer itself.
 
@@ -206,16 +206,16 @@ can do.
 ```
 
 Work is [on-going](https://github.com/moby/moby/pull/34895) to move Docker to
-containerD 1.0, likely with a slow move to have Docker use more and more of
-containerD's services.
-You can also try out containerD with Kubernetes with
+containerd 1.0, likely with a slow move to have Docker use more and more of
+containerd's services.
+You can also try out containerd with Kubernetes with
 [cri-containerd](https://github.com/kubernetes-incubator/cri-containerd/releases).
 If you've tried out [linuxkit](https://github.com/linuxkit/linuxkit) you've
-already used the new containerD!
+already used the new containerd!
 
-*Note*: containerD 1.0 is currently in the beta stage, check out the
+*Note*: containerd 1.0 is currently in the beta stage, check out the
 [releases](https://github.com/containerd/containerd/releases) page to track its
 progress.
 
 There's much more detail to go into here, so look forward to more posts about
-containerD.
+containerd.
