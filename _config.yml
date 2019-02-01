@@ -24,7 +24,4 @@ github:
 
 comments: true
 
-disqus:
-  short_name: tech-d
-
 exclude: [Dockerfile, site.conf]
