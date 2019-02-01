@@ -27,7 +27,4 @@ comments: true
 disqus:
   short_name: tech-d
 
-google:
-  analytics_id: UA-15812340-1
-
 exclude: [Dockerfile, site.conf]
