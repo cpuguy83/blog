@@ -1,4 +1,3 @@
-
 ---
 layout: post
 title: 'Shim-shiminey Shim-shiminey'
@@ -47,7 +46,55 @@ Anyone can write a shim and have containerd use it. Shims are specified by name 
 
 Example specifying the shim to use in Go:
 
-<iframe src="https://medium.com/media/a021ce718af2871dfd053fa1c636360a" frameborder=0></iframe>
+```go
+package main
+
+import (
+	"context"
+
+	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/namespaces"
+	"github.com/containerd/containerd/oci"
+	v1opts "github.com/containerd/containerd/pkg/runtimeoptions/v1"
+)
+
+func main() {
+	ctx := namespaces.WithNamespace(context.TODO(), "default")
+
+	// Create containerd client
+	client, err := containerd.New("/run/containerd/containerd.sock")
+	if err != nil {
+		panic(err)
+	}
+
+	// Get the image ref to create the container for
+	img, err := client.GetImage(ctx, "docker.io/library/busybox:latest")
+	if err != nil {
+		panic(err)
+	}
+
+	// set options we will pass to the shim (not really setting anything here, but we could)
+	var opts v1opts.Options
+
+	// Create a container object in containerd
+	cntr, err := client.NewContainer(ctx, "myContainer",
+		// All the basic things needed to create the container
+		containerd.WithSnapshotter("overlayfs"),
+		containerd.WithNewSnapshot("myContainer-snapshot", img),
+		containerd.WithImage(img),
+		containerd.WithNewSpec(oci.WithImageConfig(img)),
+					 
+		// Set the option for the shim we want
+		containerd.WithRuntime("io.containerd.runc.v1", &opts),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// cleanup
+	cntr.Delete(ctx)
+}
+```
 
 *Note that WithRuntime takes an `interface{}` as a 2nd argument, which should pass whatever type you want down to the shim. Just make sure your shim knows what that data is and register your type with the [typeurl](https://pkg.go.dev/github.com/containerd/typeurl) package so it can be encoded properly.*
 
