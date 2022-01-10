@@ -15,8 +15,6 @@ author:
   last_name: Goff
 ---
 
-# Shim-shiminey Shim-shiminey
-
 Today I’d like to jump in and talk about containerd’s “shim” interface. If you are interested in a more high level overview of containerd, see my other post.
 
 In containerd, the “shim” is responsible for all the platform specific logic for executing and interacting with a container. For every containerd or Docker container, there is a corresponding “shim” daemon process (*some exceptions apply) that serves an API which containerd uses to to interact with that container. “Interact” here means the basic lifecycle things (start/stop), execing new processes in the container, resizing tty’s and other things which requires platform specific knowledge. Another critical role of the shim is to report exit state back to containerd, so shims are expected to stick around until the exit state of the container is collected in much the same way that a zombie process continues to exist until its parent collects it (big difference here is the shim takes up resources).
