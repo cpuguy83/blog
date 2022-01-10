@@ -139,11 +139,10 @@ As a note on `task.Exec`, this calls the shim Exec RPC which does not actually e
 
 9. containerd calls the `Shutdown` RPC, at which point the shim would be expected to exit.
 
-Another import part of the shim is to fire off lifecycle events back to containerd: `TaskCreate` `TaskStart` `TaskDelete` `TaskExit`, `TaskOOM`, `TaskExecAdded`, `TaskExecStarted`, `TaskPaused`, `TaskResumed`, `TaskCheckpointed`. These are defined [here](https://github.com/containerd/containerd/blob/v1.5.6/api/events/task.proto).<br>
+Another import part of the shim is to fire off lifecycle events back to containerd: `TaskCreate` `TaskStart` `TaskDelete` `TaskExit`, `TaskOOM`, `TaskExecAdded`, `TaskExecStarted`, `TaskPaused`, `TaskResumed`, `TaskCheckpointed`.<br>
+These are defined [here](https://github.com/containerd/containerd/blob/v1.5.6/api/events/task.proto).<br>
 While clients can get the current state using the State RPC, shims should make a best effort to send these events, and in the correct order.
 
-Shims give containerd plug-ability in the low-level execution of containers. While they are not the only means of executing a container with containerd, it is how the built-in TaskService chooses to handle the problem and by extension how Kubernetes pods are run with containerd. They allow containerd to be extended to support other platforms, VM-based runtimes ([firecracker](https://github.com/firecracker-microvm/firecracker-containerd/tree/main/runtime), [kata](https://github.com/kata-containers/kata-containers/tree/2.3.0/src/runtime)), or experiment with other implementations ([systemd](https://github.com/cpuguy83/containerd-shim-systemd-v1)).
+Shims give containerd plug-ability in the low-level execution of containers. While they are not the only means of executing a container with containerd, it is how the built-in `TaskService` chooses to handle the problem and by extension how Kubernetes pods are run with containerd. They allow containerd to be extended to support other platforms, VM-based runtimes ([firecracker](https://github.com/firecracker-microvm/firecracker-containerd/tree/main/runtime), [kata](https://github.com/kata-containers/kata-containers/tree/2.3.0/src/runtime)), or experiment with other implementations ([systemd](https://github.com/cpuguy83/containerd-shim-systemd-v1)).
 
 Now go have fun and build!
-
-
