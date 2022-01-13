@@ -139,7 +139,7 @@ As a note on `task.Exec`, this calls the shim Exec RPC which does not actually e
 
 9. containerd calls the `Shutdown` RPC, at which point the shim would be expected to exit.
 
-Another import part of the shim is to fire off lifecycle events back to containerd: `TaskCreate` `TaskStart` `TaskDelete` `TaskExit`, `TaskOOM`, `TaskExecAdded`, `TaskExecStarted`, `TaskPaused`, `TaskResumed`, `TaskCheckpointed`.<br>
+Another important part of the shim is to fire off lifecycle events back to containerd: `TaskCreate` `TaskStart` `TaskDelete` `TaskExit`, `TaskOOM`, `TaskExecAdded`, `TaskExecStarted`, `TaskPaused`, `TaskResumed`, `TaskCheckpointed`.<br>
 These are defined [here](https://github.com/containerd/containerd/blob/v1.5.6/api/events/task.proto).<br>
 While clients can get the current state using the State RPC, shims should make a best effort to send these events, and in the correct order.
 
